@@ -5,6 +5,7 @@
 {-# LANGUAGE FunctionalDependencies    #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
 {-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE TypeApplications          #-}
 
 module Scenarios where
@@ -45,3 +46,13 @@ compareGUIDs fileName = do
 --   students <- runDBQuery "SELECT * FROM students"
 --   when (null students) $ logInfo "No records found."
 --   pure $ length students
+
+data Student = Student
+  deriving (Generic, ToJSON, FromJSON)
+
+getStudentsCount :: String -> DBConfig -> Flow Int
+getStudentsCount dbName cfg = do
+  (students :: [Student]) <- runDB $ do
+    conn <- connect dbName cfg
+    query conn "SELECT * FROM students"
+  pure $ length students

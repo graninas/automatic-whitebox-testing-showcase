@@ -23,10 +23,31 @@ import           Data.Proxy         (Proxy(..))
 import           Data.Text          (Text)
 import           GHC.Generics       (Generic)
 
+data DBConfig = DBConfig
+data Connection = Connection
+
+data DatabaseF next where
+  Connect :: String -> DBConfig -> (Connection -> next) -> DatabaseF next
+  Query :: Connection -> String -> ([a] -> next) -> DatabaseF next
+
+instance Functor DatabaseF where
+  fmap f (Connect dbName dbConfig next) = Connect dbName dbConfig (f . next)
+  fmap f (Query conn q next)  = Query conn q (f . next)
+
+type Database a = Free DatabaseF a
+
+connect :: String -> DBConfig -> Database Connection
+connect dbName dbCfg = liftF $ Connect dbName dbCfg id
+
+query :: Connection -> String -> Database [a]
+query conn q = liftF $ Query conn q id
+
+
 data FlowF next where
   GenerateGUID :: (String -> next) -> FlowF next
   RunIO :: (ToJSON s, FromJSON s) => IO s -> (s -> next) -> FlowF next
   LogInfo :: String -> (() -> next) -> FlowF next
+  RunDB :: (ToJSON s, FromJSON s) => Database s -> (s -> next) -> FlowF next
 
 instance Functor FlowF where
   fmap f (GenerateGUID next) = GenerateGUID (f . next)
@@ -43,3 +64,6 @@ runIO ioAct = liftF $ RunIO ioAct id
 
 logInfo :: String -> Flow ()
 logInfo msg = liftF $ LogInfo msg id
+
+runDB :: (ToJSON s, FromJSON s) => Database s -> Flow s
+runDB db = liftF $ RunDB db id
