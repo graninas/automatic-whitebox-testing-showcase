@@ -80,9 +80,9 @@ interpretFlowF rt (Connect dbName dbConfig next) = do
     (NativeConn dbName <$> DB.connect dbName dbConfig)
   pure $ next conn
 
-interpretFlowF rt (RunDB conn db next) = do
+interpretFlowF rt (RunDB conn qInfo db next) = do
   res <- withRunMode (runMode rt)
-    (mkRunDBEntry conn)
+    (mkRunDBEntry conn qInfo)
     (case conn of
         NativeConn _ nativeConn -> runDatabase nativeConn db
         MockedConn _            -> error "Should not be evaulated.")

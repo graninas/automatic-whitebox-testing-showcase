@@ -18,12 +18,36 @@
 {
     "entries": [
       [
-        0, "RunDBQuery",
-        "{\"jsonResult\":\"[]\",\"contents\":{\"query\":\"SELECT * FROM students\"}}"
+        0, "RunDBQueryEntry",
+        "{\"contents\":{\"jsonResult\":\"[]\", \"query\":\"SELECT * FROM students\"}}"
       ],
       [
         1, "LogInfoEntry",
         "{\"contents\":{\"message\":\"No records found.\"}}"
+      ]
+    ]
+}
+
+
+
+{
+    "entries": [
+      [
+        0, "RunIOEntry",
+        "{\"contents\":{\"jsonResult\":\"[]\"}}"
+      ]
+    ]
+}
+
+{
+    "entries": [
+      [
+        0, "ConnectEntry",
+        "{\"contents\":{\"ceDBName\":\"students\",\"ceDBConfig\":\"[]\"}}"
+      ],
+      [
+        1, "RunDBEntry",
+        "{\"contents\":{\"dbMockedConn\":\"No records found.\"}}"
       ]
     ]
 }

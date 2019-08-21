@@ -61,5 +61,8 @@ data Student = Student
 getStudentsCount :: String -> DB.Config -> Flow Int
 getStudentsCount dbName cfg = do
   conn <- connect dbName cfg
-  (students :: [Student]) <- runDB conn $ query "SELECT * FROM students"
-  pure $ length students
+  (students :: [Student]) <- query conn "SELECT * FROM students"
+  (disabled :: [Student]) <- query conn "SELECT * FROM students WHERE disabled=1"
+  let count = length students - length disabled
+  when (count == 0) $ logInfo "No records found."
+  pure count

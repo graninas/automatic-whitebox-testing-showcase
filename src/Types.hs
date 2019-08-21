@@ -25,10 +25,8 @@ import           GHC.Generics          (Generic)
 
 import qualified DB.Native             as DB
 
+type DBName = String
 
 data Connection
-  = NativeConn String DB.Connection
-  | MockedConn MockedConn
-
-data MockedConn = MC String
-  deriving (Show, Ord, Eq, Generic, ToJSON, FromJSON)
+  = NativeConn DBName DB.Connection
+  | MockedConn DBName

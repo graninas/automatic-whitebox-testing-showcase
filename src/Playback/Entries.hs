@@ -50,22 +50,30 @@ data LogInfoEntry = LogInfoEntry
 mkLogInfoEntry :: String -> () -> LogInfoEntry
 mkLogInfoEntry msg _ = LogInfoEntry msg
 
-data ConnectEntry = ConnectEntry String DB.Config MockedConn
-  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
-
-mkConnectEntry :: String -> DB.Config -> Connection -> ConnectEntry
-mkConnectEntry dbName dbCfg (NativeConn _ _)  = ConnectEntry dbName dbCfg (MC dbName)
-mkConnectEntry dbName dbCfg (MockedConn mc) = ConnectEntry dbName dbCfg mc
-
-data RunDBEntry = RunDBEntry
-  { dbMockedConn :: MockedConn
-  , dbJsonResult :: String
+data ConnectEntry = ConnectEntry
+  { ceDBConfig :: DB.Config
+  , ceDBName :: String
   }
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
-mkRunDBEntry :: ToJSON a => Connection -> a -> RunDBEntry
-mkRunDBEntry (NativeConn dbName _) dbRes = RunDBEntry (MC dbName) $ encodeToStr dbRes
-mkRunDBEntry (MockedConn mc) dbRes = RunDBEntry mc $ encodeToStr dbRes
+mkConnectEntry :: String -> DB.Config -> Connection -> ConnectEntry
+mkConnectEntry dbName dbCfg _ = ConnectEntry dbCfg dbName
+
+data RunDBEntry = RunDBEntry
+  { dbeDBName :: String
+  , dbeDescription :: String
+  , dbeJsonResult :: String
+  }
+  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+
+mkRunDBEntry
+  :: ToJSON a
+  => Connection
+  -> String
+  -> a
+  -> RunDBEntry
+mkRunDBEntry (NativeConn dbName _) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToStr dbRes
+mkRunDBEntry (MockedConn dbName) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToStr dbRes
 
 
 instance RRItem GenerateGUIDEntry where
@@ -100,9 +108,7 @@ instance RRItem ConnectEntry where
   getTag _ = "ConnectEntry"
 
 instance MockedResult ConnectEntry Connection where
-  getMock (ConnectEntry _ _ mc) = Just $ MockedConn mc
-
-
+  getMock (ConnectEntry _ dbName) = Just $ MockedConn dbName
 
 instance RRItem RunDBEntry where
   toRecordingEntry rrItem idx = RecordingEntry idx "RunDBEntry" $ encodeToStr rrItem
@@ -110,4 +116,4 @@ instance RRItem RunDBEntry where
   getTag _ = "RunDBEntry"
 
 instance FromJSON a => MockedResult RunDBEntry a where
-  getMock (RunDBEntry _ r) = decodeFromStr r
+  getMock (RunDBEntry _ _ r) = decodeFromStr r

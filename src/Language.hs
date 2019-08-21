@@ -34,8 +34,8 @@ instance Functor DatabaseF where
 
 type Database a = Free DatabaseF a
 
-query :: String -> Database [a]
-query q = liftF $ Query q id
+query' :: String -> Database [a]
+query' q = liftF $ Query q id
 
 
 data FlowF next where
@@ -43,8 +43,10 @@ data FlowF next where
   RunIO :: (ToJSON s, FromJSON s) => IO s -> (s -> next) -> FlowF next
   LogInfo :: String -> (() -> next) -> FlowF next
 
-  Connect :: String -> DB.Config -> (Connection -> next) -> FlowF next
-  RunDB :: (ToJSON s, FromJSON s) => Connection -> Database s -> (s -> next) -> FlowF next
+  Connect :: DBName -> DB.Config -> (Connection -> next) -> FlowF next
+  RunDB :: (ToJSON s, FromJSON s)
+        => Connection -> String -> Database s
+        -> (s -> next) -> FlowF next
 
 
 instance Functor FlowF where
@@ -53,7 +55,7 @@ instance Functor FlowF where
   fmap f (LogInfo msg next)             = LogInfo msg (f . next)
 
   fmap f (Connect dbName dbConfig next) = Connect dbName dbConfig (f . next)
-  fmap f (RunDB conn db next)           = RunDB conn db (f . next)
+  fmap f (RunDB conn qInfo db next)     = RunDB conn qInfo db (f . next)
 
 type Flow a = Free FlowF a
 
@@ -66,8 +68,16 @@ runIO ioAct = liftF $ RunIO ioAct id
 logInfo :: String -> Flow ()
 logInfo msg = liftF $ LogInfo msg id
 
-connect :: String -> DB.Config -> Flow Connection
+connect :: DBName -> DB.Config -> Flow Connection
 connect dbName dbCfg = liftF $ Connect dbName dbCfg id
 
-runDB :: (ToJSON s, FromJSON s) => Connection -> Database s -> Flow s
-runDB conn db = liftF $ RunDB conn db id
+runDB
+  :: (ToJSON s, FromJSON s)
+  => Connection
+  -> String
+  -> Database s
+  -> Flow s
+runDB conn qInfo db = liftF $ RunDB conn qInfo db id
+
+query :: (ToJSON s, FromJSON s) => Connection -> String -> Flow [s]
+query conn q = runDB conn q $ query' q
