@@ -87,7 +87,7 @@ Last but not the least thing to note that all of this can be achieved without af
 
 ### Free monad eDSLs for business logic
 
-It’s crucial to understand why we need to abstract our business logic with Free monads to enable such option as the automatic white-box testing. It seems other approaches (Final Tagless, Service Handle Pattern, ReaderT pattern) do not allow to create this mechanism, or it will be less convenient to do so. Free monads, in comparing to Final Tagless, do not allow to embed an arbitrary effect in the middle of a scenario. It’s probably possible with FT to overcome this problem with different additional wrappers, but let’s agree that we need to introspect every effectful step from the logic. Introspection is essential for a Free monadic languages, and we’ll just use this property to construct a more advanced mechanism of recording-replaying over our language.
+It’s crucial to understand why we need to abstract our business logic with Free monads to enable such option as the automatic white-box testing. It seems other approaches (`Final Tagless`, `Service Handle Pattern`, `ReaderT Pattern`) do not allow to create this recording-replaying mechanism, or it will be less convenient to do so. It’s probably possible with FT to overcome this problem with different additional wrappers, but let’s agree that introspection of Free monads makes this task much easier.
 
 Suppose we have a Free monadic language with the following methods available:
 
@@ -109,7 +109,7 @@ logInfo :: String -> Flow ()
 logInfo msg = liftF $ LogInfo msg id
 ```
 
-This is a simple eDSL that has only three methods: generating UUID, logging a message and evaluating a random IO effect. A toy example of a business logic scenario will be:
+This is a simple eDSL that has only three methods: generating UUID, logging a message and evaluating a random `IO` effect. A toy example of a business logic scenario will be:
 
 ```haskell
 compareGUIDs :: String -> Flow ()
@@ -124,7 +124,7 @@ compareGUIDs fileName = do
 
 This program obtains a new GUID, reads a file for getting an old GUID and compares whether these two GUIDs are equal. (It can possibly crash if the readFile function throws an exception, let’s just ignore this for now.) Not very interesting program that is enough for us to talk about why we need this level of abstraction.
 
-Firstly, this Free monadic language is testable. Running the compareGUIDs script with different interpreters allows either to perform real effects or mock them for our testing purposes.
+Firstly, this Free monadic language is testable. Running the `compareGUIDs` script with different interpreters allows either to perform real effects or mock them for our testing purposes.
 
 ```haskell
 -- Real interpreter
@@ -140,7 +140,7 @@ interpretFlowFTest (RunIO ioAct next)  = error "IO not supported in tests."
 interpretFlowFTest (LogInfo msg next)  = pure $ next ()
 ```
 
-The RunIO method makes some troubles here. By the definition, we don’t know what result should be returned, we only know it’s a value of an arbitrary type `a`. It’s not mockable because mocking essentially means substituting a result by some predefined value of this type, and it’s possible only when the type is well-known. So it’s more likely that we won’t be able to test a flow containing such runIO method. To avoid the problem, we can at least require the type to be unit, so no return value is expected from the effect, and therefore we can handle it by “doing nothing”:
+The `RunIO` method makes some troubles here. By the definition, we don’t know what result should be returned, we only know it’s a value of an arbitrary type `a`. It’s not mockable because mocking essentially means substituting a result by some predefined value of this type, and it’s possible only when the type is well-known. So it’s more likely that we won’t be able to test a flow containing such `runIO` method. To avoid the problem, we can at least require the type to be unit, so no return value is expected from the effect, and therefore we can handle it by “doing nothing”:
 
 ```haskell
 data FlowF next where
@@ -154,7 +154,7 @@ interpretFlowFTest :: FlowF a -> IO a
 interpretFlowFTest (RunIO _ next) = pure $ next ()
 ```
 
-This is fine unless we do need the results from there. For example, a specific type that came from an external library: database connection, file handle, IORef, MVar and so on. Let’s consider the following flow with a DB.Connection type that came from the external library:
+This is fine unless we do need the results from there. For example, a specific type that came from an external library: database connection, file handle, `IORef`, `MVar` and so on. Let’s consider the following flow with a `DB.Connection` type that came from the external library:
 
 ```haskell
 import qualified DB.Native as DB
@@ -166,7 +166,7 @@ initDB dbName cfg = do
   pure mbConn
 ```
 
-Our RunIO step cannot be recorded, so it will be absent in the recording. But when the player hits this runIO call, it will have to run a real effect, which is not what should happen. This effectively means the usage of bare types is not allowed because all the steps should be written into the recording. How we can solve this problem? To make scenarios recordable and replayable we have to abstract all the bare types by our own mockable and serializable types. We’ll see how to do with DB connections in the next part of the article, and for now we’ll just proceed with a tiny change in the language. We’ll constrain the RunIO method by the ToJSON / FromJSON instances from the aeson package for the type `a`:
+Our `RunIO` step cannot be recorded, so it will be absent in the recording. But when the player hits this `runIO` call, it will have to run a real effect, which is not what should happen. This effectively means the usage of bare types is not allowed because all the steps should be written into the recording. How we can solve this problem? To make scenarios recordable and replayable we have to abstract all the bare types by our own mockable and serializable types. We’ll see how to do with DB connections in the next part of the article, and for now we’ll just proceed with a tiny change in the language. We’ll constrain the `RunIO` method by the `ToJSON / FromJSON` instances from the `aeson` package for the type `a`:
 
 ```haskell
 data FlowF next where
@@ -191,7 +191,7 @@ The idea behind this mechanism is to have three modes for the interpreter:
 * **Recorder mode.** Every language step should be evaluated as usual, but also it should produce an entry describing what happened on this step (input parameters, output result, additional info).
 * **Player mode.** The interpreter will receive an array of recording entries, and it will be going through the scenario step-by-step, popping the next entry from the recording and doing a replay. In this mode, no real effect will be evaluated. Instead, entries will be providing mocks for steps, and the scenario will be used as a sequence of the steps that should be replayed.
 
-In the recording-replaying mechanism, all the Flow methods should be accompanied with a corresponding entry types, for instance:
+In the recording-replaying mechanism, all the `Flow` methods should be accompanied with a corresponding entry types, for instance:
 
 ```haskell
 data GenerateGUIDEntry = GenerateGUIDEntry { guid :: String }
@@ -214,7 +214,7 @@ mkLogInfoEntry :: String -> () -> LogInfoEntry
 mkLogInfoEntry msg _ = LogInfoEntry msg
 ```
 
-These types will be serialized and written into the recording file. Sequence of such entries represents a particular scenario - its key steps with effects. Pure calculations won’t appear in the recordings because they are not encoded as Free monadic actions. If you need a pure calculation to be recorded, you can either introduce a method for it or turn this pure calculation into the impure one and pass it to runIO. In here, you’ll have to decide how many info about the calculation you want to record: the result only or the arguments and the operation too. You may end up with adding a separate Free language for expressions for a better granularity of your recordings, but that is another story...
+These types will be serialized and written into the recording file. Sequence of such entries represents a particular scenario - its key steps with effects. Pure calculations won’t appear in the recordings because they are not encoded as Free monadic actions. If you need a pure calculation to be recorded, you can either introduce a method for it or turn this pure calculation into the impure one and pass it to `runIO`. In here, you’ll have to decide how many info about the calculation you want to record: the result only or the arguments and the operation too. You may end up with adding a separate Free language for expressions for a better granularity of your recordings, but that is another story...
 
 Technically, it’s seems clear how the recording mode should work: on every step, push a corresponding entry into the recordings array collecting them all during the evaluation. At the end we’ll have a recording that we may write into the file. Except... How would we put all these different entry types into a homogenous container? Well, we could just have a single type ADT for all the entries like so:
 
@@ -226,7 +226,7 @@ data RecordingEntry
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 ```
 
-This is fine, but let’s make our lives harder. We’ll just encode an entry type and put it as string into the following RecordingEntry type:
+This is fine, but let’s make our lives harder. We’ll just encode an entry type and put it as string into the following `RecordingEntry` type:
 
 ```haskell
 type EntryIndex = Int
@@ -258,7 +258,7 @@ data PlayerRuntime = PlayerRuntime
   }
 ```
 
-The interpreter works in either of three modes. There can be another runtime operational data such as current DB connections, options, variables, that is needed by the interpreter. The Runtime type is a good place to keep this data (if you don’t want to use Reader or State):
+The interpreter works in either of three modes. There can be another runtime operational data such as current DB connections, options, variables, that is needed by the interpreter. The `Runtime` type is a good place to keep this data (if you don’t want to use `ReaderT` or `StateT`):
 
 ```haskell
 data Runtime = Runtime
@@ -309,9 +309,9 @@ data PlaybackError = PlaybackError
   }
 ```
 
-The error message (and the diff between the previous and the current flows) is usually enough to understand what happened. There will be a step index, an entry and the current FlowF method description. On a closer look however it’s not so obvious how the player obtains this info. Let’s elaborate that.
+The error message (and the diff between the previous and the current flows) is usually enough to understand what happened. There will be a step index, an entry and the current `FlowF` method description. On a closer look however it’s not so obvious how the player obtains this info. Let’s elaborate that.
 
-When the interpreter hits a particular method, the latter contains all the information about the step. For example, the LogInfo method carries the message string, the RunIO method has a return type defined and so on. The replaying mechanism should be able to decode mocks, to prepare an entry for serialization, to check the input parameters of the method (if there are such parameters). We’re passing this information into the mechanism by associating it with the corresponding entry using the two type classes. First of them, RRItem, allows to serialize and deserialize the entry:
+When the interpreter hits a particular method, the latter contains all the information about the step. For example, the `LogInfo` method carries the message string, the `RunIO` method has a return type defined and so on. The replaying mechanism should be able to decode mocks, to prepare an entry for serialization, to check the input parameters of the method (if there are such parameters). We’re passing this information into the mechanism by associating it with the corresponding entry using the two type classes. First of them, `RRItem`, allows to serialize and deserialize the entry:
 
 ```haskell
 class (Eq rrItem, ToJSON rrItem, FromJSON rrItem)
@@ -326,7 +326,7 @@ instance RRItem GenerateGUIDEntry where
   getTag _ = "GenerateGUIDEntry"
 ```
 
-The second type class, MockedResult, allows to extract a mock value from the entry:
+The second type class, `MockedResult`, allows to extract a mock value from the entry:
 
 ```haskell
 class RRItem rrItem => MockedResult rrItem native where
@@ -336,9 +336,9 @@ instance MockedResult GenerateGUIDEntry String where
   getMock (GenerateGUIDEntry g) = Just g
 ```
 
-Notice that the native type is not necessarily serializable, it’s just something we should return from the getMock function. We are free to store some another type into the entry. This is a subtle design detail, though.
+Notice that the native type is not necessarily serializable, it’s just something we should return from the `getMock` function. We are free to store some another type into the entry. This is a subtle design detail, though.
 
-Let’s move forward. There is a withRunMode function that is the entry point for the mechanism. It takes the run mode, the native effect (to be or not to be evaluated), and the entry creation function:
+Let’s move forward. There is a `withRunMode` function that is the entry point for the mechanism. It takes the run mode, the native effect (to be or not to be evaluated), and the entry creation function:
 
 ```haskell
 import Data.UUID (toString)
@@ -367,7 +367,7 @@ interpretFlowF (Runtime mode) (LogInfo msg next) =
   next <$> withRunMode mode (mkLogInfoEntry msg) (putStrLn msg)
 ```
 
-So, what’s inside the withRunMode function? Well, it’s just a switch for the mode. All the underlying functions work with entries abstracted by the type classes.
+So, what’s inside the `withRunMode` function? Well, it’s just a switch for the mode. All the underlying functions work with entries abstracted by the type classes.
 
 ```haskell
 withRunMode :: RRItem rrItem => MockedResult rrItem native
@@ -382,7 +382,7 @@ withRunMode (ReplayingMode playerRt) mkRRItem act
   = replay playerRt mkRRItem act
 ```
 
-Going deeper to the implementation seems not that necessary for this storytelling. The record and replay functions store and load entries, decode results, make checks and verifications. A more developed mechanism also supports configs for replaying and recording. You can see how it’s done in the showcase project, and now we’d better cover an important question we mentioned earlier. Let’s return to the design space and talk about why we have to abstract native types and libraries for this mechanism particularly and in general.
+Going deeper to the implementation seems not that necessary for this storytelling. The `record` and `replay` functions store and load entries, decode results, make checks and verifications. A more developed mechanism also supports configs for replaying and recording. You can see how it’s [done](https://github.com/graninas/automatic-whitebox-testing-showcase/blob/master/src/Playback/Machine.hs) in the showcase project, and now we’d better cover an important question we mentioned earlier. Let’s return to the design space and talk about why we have to abstract native types and libraries for this mechanism particularly and in general.
 
 ### Abstracting over the native libraries and types
 
@@ -397,7 +397,7 @@ getStudentsCount dbName cfg = do
   pure $ length students
 ```
 
-The runIO method has changed since then and now the compilation will fail because DB.Connection does not have ToJSON and FromJSON instances. There is a simple refactoring that solves the problem in some kind: move all the DB operations into the impure block and do not expose connection out there:
+The `runIO` method has changed since then and now the compilation will fail because `DB.Connection` does not have `ToJSON` and `FromJSON` instances. There is a simple refactoring that solves the problem in some kind: move all the DB operations into the impure block and do not expose connection out there:
 
 ```haskell
 getStudentsCount :: DBName -> DB.Config -> Flow Int
@@ -447,7 +447,7 @@ data Connection
   | MockedConn DBName
 ```
 
-It’s also serializable in sense the corresponding entry will keep some useful info about it, namely, a DBName:
+It’s also serializable in sense the corresponding entry will keep some useful info about it, namely, a `DBName`:
 
 ```haskell
 data ConnectEntry = ConnectEntry
@@ -460,7 +460,7 @@ mkConnectEntry :: String -> DB.Config -> Connection -> ConnectEntry
 mkConnectEntry dbName dbCfg _ = ConnectEntry dbCfg dbName
 ```
 
-So that in the recording and normal mode the Connection variable will contain NativeConn, and MockedConn in the replay mode. The corresponding recordings might look like this:
+So that in the recording and normal mode the `Connection` variable will contain `NativeConn`, and `MockedConn` in the replay mode. The corresponding recordings might look like this:
 
 ```json
 {
@@ -489,7 +489,7 @@ So that in the recording and normal mode the Connection variable will contain Na
 }
 ```
 
-As you can see the recordings do not contain the connection itself, just a help info about it. When replaying, there should be a code in the interpreter that is able to distinguish the two variants of connection. But before we’ll have a loot at it, let’s figure out the design of the DB-Flow interaction that is used for the scenario above. This design utilizes a small but important idea of a clear separation between DB queries evaluation and DB connectivity management.
+As you can see the recordings do not contain the connection itself, just a help info about it. When replaying, there should be a code in the interpreter that is able to distinguish the two variants of connection. But before we’ll have a loot at it, let’s figure out the design of the DB <-> Flow interaction that is used for the scenario above. This design utilizes a small but important idea of a clear separation between DB queries evaluation and DB connectivity management.
 
 ```haskell
 type Description = String
@@ -504,7 +504,7 @@ data FlowF next where
         -> Database s -> (s -> next) -> FlowF next
 ```
 
-The Database language is auxiliary. It will be only needed to abstract the native calls, but it won’t be visible to the client code. All the actual methods will be working within the Flow language. The following smart constructors provide a sane UX for this DB subsystem:
+The Database language is auxiliary. It will be only needed to abstract the native calls, but it won’t be visible to the client code. All the actual methods will be working within the `Flow` language. The following smart constructors provide a sane UX for this DB subsystem:
 
 ```haskell
 -- Helpers
@@ -523,9 +523,9 @@ query :: (ToJSON s, FromJSON s) => Connection -> String -> Flow [s]
 query conn q = runDB conn q $ query' q
 ```
 
-We also provide an additional info about queries for the RunDB method. For example, the query string. This makes recordings more useful.
+We also provide an additional info about queries for the `RunDB` method. For example, the query string. This makes recordings more useful.
 
-The interpreter for the Connect and RunDB methods looks similar to other methods except for RunDB there is a special case that checks the type of the connection, and if the latter is NativeConn, a real effect will be evaluated.
+The interpreter for the `Connect` and `RunDB` methods looks similar to other methods except for `RunDB` there is a special case that checks the type of the connection, and if the latter is `NativeConn`, a real effect will be evaluated.
 
 ```haskell
 interpretFlowF rt (Connect dbName dbConfig next) = do
@@ -543,7 +543,7 @@ interpretFlowF rt (RunDB conn qInfo db next) = do
   pure $ next res
 ```
 
-The variant with MockedConn won’t be called in the replaying mode. Hopefully, no one will create a fake MockedConn for the normal mode.
+The variant with `MockedConn` won’t be called in the replaying mode. Hopefully, no one will create a fake `MockedConn` for the normal mode.
 
 This is how we abstract over the native DB facilities, - this “pattern” can be (and should be) used for all other native effects and subsystems. Although they can require a slightly different design, the idea will remain the same: provide a custom, possibly serializable type, do not use native types in flows, hide native calls behind a eDSL. And the flows will become clean and nice.
 
@@ -567,9 +567,9 @@ Additionally, an entry can be individually configured by setting up its replayin
 - NoVerify. Verifying disabled, mocking enabled.
 - NoMock. Verifying and mocking disabled. Real effect will be used on this step.
 
-The framework also supports async evaluations, and the recording-replaying mechanism respects that. Forked flows will be recorded and replayed separately, thread-safely, without making a mess in the recording entries. This works for flows hierarchies or any size. The framework supports KV DBs and SQL DBs, and it has many other possibilities. You can find more samples of flows and recordings in tests to Presto.Backend, [here](https://github.com/juspay/purescript-presto-backend/blob/feature/record-replay/test/Presto/Backend/RunModesSpec.purs).
+The framework also supports async evaluations, and the recording-replaying mechanism respects that. Forked flows will be recorded and replayed separately, thread-safely, without making a mess in the recording entries. This works for flows hierarchies or any size. The framework supports KV DBs and SQL DBs, and it has many other possibilities. You can find more samples of flows and recordings in tests to `Presto.Backend`, [here](https://github.com/juspay/purescript-presto-backend/blob/feature/record-replay/test/Presto/Backend/RunModesSpec.purs).
 
-PureScript has some significant differences from Haskell on the type level. In particular, there is no GADTs, Type Families and existential types there. This is sometimes an obstacle but many cases can be solved by other tools and features. For example, we workarounded the lack of existentials by a special type [Data.Exists](https://pursuit.purescript.org/packages/purescript-exists/4.0.0/docs/Data.Exists) that we’re using to wrap our types:
+PureScript has some significant differences from Haskell on the type level. In particular, there is no `GADTs`, `Type Families` and `Existential Types` there. This is sometimes an obstacle but many cases can be solved by other tools and features. For example, we workarounded the lack of existentials by a special type [Data.Exists](https://pursuit.purescript.org/packages/purescript-exists/4.0.0/docs/Data.Exists) that we’re using to wrap our types:
 
 ```haskell
 import Data.Exists (Exists)
