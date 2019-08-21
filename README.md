@@ -600,7 +600,7 @@ But you know what? This is fine and not a problem. We wrote this code once durin
 
 ### Conclusion
 
-The Free monad framework allowed us to add this very useful feature almost for free. We got interesting results and revealed even more use cases than we thought initially. For instance, it’s pretty much possible to automatically measure the performance of some important steps like HTTP calls, DB interaction, and so on, and have a way to get a structured, configurable report from the recordings. This is a very cheap approach to white-box testing that has the power to save a lot of hours that are otherwise could have been lost in unit testing. The last but not the least point is that having an application being structured into layers with Free monads opens a lot more possibilities that were not possible with other approaches.
+The Free monad approach allowed us to add this very useful feature almost for free. We got interesting results and revealed even more use cases than we thought initially. For instance, it’s pretty much possible to automatically measure the performance of some important steps like HTTP calls, DB interaction, and so on, and have a way to get a structured, configurable report from the recordings. This is a very cheap approach to white-box testing that has the power to save a lot of hours that are otherwise could have been lost in unit testing. The last but not the least is that having an application being structured into layers with Free monads enables a lot more possibilities that were not possible with other approaches.
 
 ### Acknowledges
 
