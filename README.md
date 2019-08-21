@@ -146,8 +146,7 @@ The `RunIO` method makes some troubles here. By the definition, we don’t know 
 
 ```haskell
 data FlowF next where
-
-  RunIO :: IO ()-> (() -> next) -> FlowF next
+  RunIO :: IO () -> (() -> next) -> FlowF next
 
 runIO :: IO () -> Flow ()
 runIO ioAct = liftF $ RunIO ioAct id
