@@ -85,7 +85,7 @@ interpretFlowF rt (RunDB conn qInfo db next) = do
     (mkRunDBEntry conn qInfo)
     (case conn of
         NativeConn _ nativeConn -> runDatabase nativeConn db
-        MockedConn _            -> error "Should not be evaulated.")
+        MockedConn _            -> error "Should not be evaluated.")
   pure $ next res
 
 
