@@ -39,15 +39,28 @@
     ]
 }
 
+
 {
     "entries": [
       [
         0, "ConnectEntry",
-        "{\"contents\":{\"ceDBName\":\"students\",\"ceDBConfig\":\"[]\"}}"
+        "{\"contents\":{\"ceDBConfig\":\"[]\", \"ceDBName\":\"students\"}}"
       ],
       [
         1, "RunDBEntry",
-        "{\"contents\":{\"dbMockedConn\":\"No records found.\"}}"
+        "{\"contents\":{\"dbeDescription\":\"SELECT * FROM students\",
+        \"dbeJsonResult\":\"[]\",
+        \"dbeDBName\":"students"}}"
+      ],
+      [
+        2, "RunDBEntry",
+        "{\"contents\":{\"dbeDescription\":\"SELECT * FROM students WHERE disabled=1\",
+        \"dbeJsonResult\":\"[]\",
+        \"dbeDBName\":"students"}}"
+      ],
+      [
+        3, "LogInfoEntry",
+        "{\"contents\":{\"message\":\"No records found.\"}}"
       ]
     ]
 }
