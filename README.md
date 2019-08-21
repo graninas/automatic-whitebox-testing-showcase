@@ -546,9 +546,10 @@ interpretFlowF rt (RunDB conn qInfo db next) = do
 The variant with MockedConn won’t be called in the replaying mode. Hopefully, no one will create a fake MockedConn for the normal mode.
 
 This is how we abstract over the native DB facilities, - this “pattern” can be (and should be) used for all other native effects and subsystems. Although they can require a slightly different design, the idea will remain the same: provide a custom, possibly serializable type, do not use native types in flows, hide native calls behind a eDSL. And the flows will become clean and nice.
-Presto.Backend possibilities and PureScript differences
 
-In the Presto.Backend framework (by Juspay), we’ve developed a powerful technology for automated regression testing. The showcase project is mostly a less-featured port from the PureScript code, so if you are interested to know more, you can check Presto.Backend. It supports such features as configs, async flows handling, KV DB and SQL DB interaction and many others. Here goes a short overview of its possibilities related to recording-replaying mechanism.
+### Presto.Backend possibilities and PureScript differences
+
+In the [Presto.Backend](https://github.com/juspay/purescript-presto-backend/tree/feature/record-replay) framework (by [Juspay](http://juspay.in)), we’ve developed a powerful technology for automated regression testing. The showcase project is mostly a less-featured port from the PureScript code, so if you are interested to know more, you can check Presto.Backend. It supports such features as configs, async flows handling, KV DB and SQL DB interaction and many others. Here goes a short overview of its possibilities related to recording-replaying mechanism.
 
 Different configs can be used for a fine tuning of the recording-replaying process.
 
@@ -566,9 +567,9 @@ Additionally, an entry can be individually configured by setting up its replayin
 - NoVerify. Verifying disabled, mocking enabled.
 - NoMock. Verifying and mocking disabled. Real effect will be used on this step.
 
-The framework also supports async evaluations, and the recording-replaying mechanism respects that. Forked flows will be recorded and replayed separately, thread-safely, without making a mess in the recording entries. This works for flows hierarchies or any size. The framework supports KV DBs and SQL DBs, and it has many other possibilities. You can find more samples of flows and recordings in tests to Presto.Backend, here.
+The framework also supports async evaluations, and the recording-replaying mechanism respects that. Forked flows will be recorded and replayed separately, thread-safely, without making a mess in the recording entries. This works for flows hierarchies or any size. The framework supports KV DBs and SQL DBs, and it has many other possibilities. You can find more samples of flows and recordings in tests to Presto.Backend, [here](https://github.com/juspay/purescript-presto-backend/blob/feature/record-replay/test/Presto/Backend/RunModesSpec.purs).
 
-PureScript has some significant differences from Haskell on the type level. In particular, there is no GADTs, Type Families and existential types there. This is sometimes an obstacle but many cases can be solved by other tools and features. For example, we workarounded the lack of existentials by a special type Data.Exists that we’re using to wrap our types:
+PureScript has some significant differences from Haskell on the type level. In particular, there is no GADTs, Type Families and existential types there. This is sometimes an obstacle but many cases can be solved by other tools and features. For example, we workarounded the lack of existentials by a special type [Data.Exists](https://pursuit.purescript.org/packages/purescript-exists/4.0.0/docs/Data.Exists) that we’re using to wrap our types:
 
 ```haskell
 import Data.Exists (Exists)
@@ -605,8 +606,8 @@ The Free monad framework allowed us to add this very useful feature almost for f
 
 Thanks to all who made this article possible:
 
-* Juspay Technology Private Limited
+* [Juspay Technology Private Limited](http://juspay.in/)
 * Vimal Kumar, Dilip Jain
-* Contributors to Presto.Backend
+* [Contributors to Presto.Backend](https://github.com/juspay/purescript-presto-backend/graphs/contributors)
 * Vasily Gorev, Sergey Stepanenko, Shubhanshu Mani
 * And other people who were working on this project.
