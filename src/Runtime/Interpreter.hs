@@ -46,7 +46,7 @@ withRunMode (RecordingMode recorderRt) mkRRItem act
   = record recorderRt Proxy mkRRItem act
 
 withRunMode (ReplayingMode playerRt) mkRRItem act
-  = replay playerRt mkRRItem act
+  = replay playerRt Proxy mkRRItem act
 
 --------------------------------------------------------------------------------
 -- DB interpreter

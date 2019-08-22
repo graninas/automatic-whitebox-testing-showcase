@@ -27,6 +27,7 @@ dependencies:
 - text
 - bytestring
 - containers
+- vector
 
 library:
   source-dirs: src
