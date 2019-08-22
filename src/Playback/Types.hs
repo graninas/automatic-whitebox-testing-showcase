@@ -9,6 +9,7 @@
 
 module Playback.Types where
 
+import           Control.Concurrent.MVar (MVar)
 import           Control.Monad      (unless, when, void)
 import           Control.Monad.Free
 import qualified Data.ByteString.Char8 as BS
@@ -16,7 +17,6 @@ import qualified Data.ByteString.Lazy as BSL
 import           Data.UUID          (toString)
 import           Data.Maybe         (isJust)
 import qualified Data.IntMap as MArr
-import           Data.IORef         (IORef, newIORef, readIORef, writeIORef)
 import           Data.UUID.V4       (nextRandom)
 import           Data.Aeson         (ToJSON, FromJSON, encode, decode)
 import           Data.Proxy         (Proxy(..))
@@ -57,15 +57,14 @@ data PlaybackError = PlaybackError
   }
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
--- TODO: MVar
 data RecorderRuntime = RecorderRuntime
-  { recordingRef :: IORef RecordingEntries
+  { recordingMVar :: MVar RecordingEntries
   }
 
 data PlayerRuntime = PlayerRuntime
   { recording :: RecordingEntries
-  , stepRef :: IORef Int
-  , errorRef :: IORef (Maybe PlaybackError)
+  , stepMVar :: MVar Int
+  , errorMVar :: MVar PlaybackError
   }
 
 

@@ -16,7 +16,8 @@ import qualified Data.ByteString.Lazy as BSL
 import           Data.UUID          (toString)
 import           Data.Maybe         (isJust)
 import qualified Data.IntMap as MArr
-import           Data.IORef         (IORef, newIORef, readIORef, writeIORef)
+import           Control.Concurrent.MVar (MVar, takeMVar, putMVar
+                                         , isEmptyMVar, swapMVar)
 import           Data.UUID.V4       (nextRandom)
 import           Data.Aeson         (ToJSON, FromJSON, encode, decode)
 import           Data.Proxy         (Proxy(..))
@@ -53,7 +54,10 @@ itemMismatch flowStep recordingEntry
 
 setReplayingError :: PlayerRuntime -> PlaybackError -> IO a
 setReplayingError playerRt err = do
-  writeIORef (errorRef playerRt) $ Just err
+  flag <- isEmptyMVar (errorMVar playerRt)
+  if flag
+    then putMVar (errorMVar playerRt) err
+    else void $ swapMVar (errorMVar playerRt) err
   error $ show err
 
 pushRecordingEntry
@@ -61,16 +65,16 @@ pushRecordingEntry
   -> RecordingEntry
   -> IO ()
 pushRecordingEntry recorderRt (RecordingEntry _ n p) = do
-  entries <- readIORef $ recordingRef recorderRt
+  entries <- takeMVar $ recordingMVar recorderRt
   let idx = (MArr.size entries)
   let re = RecordingEntry idx n p
-  writeIORef (recordingRef recorderRt) $ MArr.insert idx re entries
+  putMVar (recordingMVar recorderRt) $ MArr.insert idx re entries
 
 popNextRecordingEntry :: PlayerRuntime -> IO (Maybe RecordingEntry)
 popNextRecordingEntry playerRt = do
-  cur <- readIORef $ stepRef playerRt
+  cur <- takeMVar $ stepMVar playerRt
   let mbItem = MArr.lookup cur $ recording playerRt
-  when (isJust mbItem) $ writeIORef (stepRef playerRt) (cur + 1)
+  when (isJust mbItem) $ putMVar (stepMVar playerRt) (cur + 1)
   pure mbItem
 
 popNextRRItem
