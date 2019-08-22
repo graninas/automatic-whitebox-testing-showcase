@@ -16,7 +16,7 @@ Building applications with complex business logic is rarely done without testing
 - [The recording-replaying mechanism: entries and run modes](#The-recording-replaying-mechanism-entries-and-run-modes)
 - [The recording-replaying mechanism](#The-recording-replaying-mechanism)
 - [Abstracting over the native libraries and types](#Abstracting-over-the-native-libraries-and-types)
-- [Presto.Backend possibilities and PureScript differences](#Presto-Backend-possibilities-and-PureScript-differences)
+- [Presto.Backend possibilities and PureScript differences](#Presto--Backend-possibilities-and-PureScript-differences)
 - [Conclusion](#Conclusion)
 - [Acknowledges](#Acknowledges)
 
