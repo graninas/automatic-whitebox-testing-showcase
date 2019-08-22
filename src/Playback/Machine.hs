@@ -70,7 +70,7 @@ pushRecordingEntry recorderRt (RecordingEntry _ mode n p) = do
   writeIORef (recordingRef recorderRt) $ V.snoc entries re
 
 popNextRecordingEntry :: PlayerRuntime -> IO (Maybe RecordingEntry)
-popNextRecordingEntry playerRt@PlayerRuntime{..} = do
+popNextRecordingEntry PlayerRuntime{..} = do
   cur <- readIORef stepRef
   let mbItem = (!?) recording cur
   when (isJust mbItem) $ writeIORef stepRef (cur + 1)
@@ -153,7 +153,7 @@ replayWithGlobalConfig playerRt rrItemP ioAct mkRRItem eNextRRItemRes = do
 checkForReplayConfig :: PlayerRuntime -> String -> GlobalReplayingMode
 checkForReplayConfig  PlayerRuntime{..} tag | tag `elem` disableMocking  = GlobalNoMocking
                                             | tag `elem` disableVerify   = GlobalNoVerify
-                                            | otherwise                = GlobalNormal
+                                            | otherwise                  = GlobalNormal
 
 replay
   :: RRItem rrItem
