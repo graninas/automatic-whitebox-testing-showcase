@@ -10,6 +10,16 @@ Building applications with complex business logic is rarely done without testing
 
 ![Recording-Replaying](https://github.com/graninas/automatic-whitebox-testing-showcase/blob/master/Recording-Replaying.png)
 
+- [Integration tests](#integration-tests)
+- [Automatic white-box testing](#Automatic-white-box-testing)
+- [Free monad eDSLs for business logic](#Free-monad-eDSLs-for-business-logic)
+- [The recording-replaying mechanism: entries and run modes](#The-recording-replaying-mechanism-entries-and-run-modes)
+- [The recording-replaying mechanism](#The-recording-replaying-mechanism)
+- [Abstracting over the native libraries and types](#Abstracting-over-the-native-libraries-and-types)
+- [Presto.Backend possibilities and PureScript differences](#Presto-Backend-possibilities-and-PureScript-differences)
+- [Conclusion](#Conclusion)
+- [Acknowledges](#Acknowledges)
+
 ### Integration tests
 
 Integration tests can protect the logic to some degree. These tests consider the system to be a black-box working in the special environment, and interact with this box via public interface to check is the behaviour valid. Integration tests are very close to a production-like running of the code except they probably don’t usually make calls to real services and don’t use a real production data. Instead of this, integration tests may use some special environments like sandboxes and dummy services to simulate an actual interaction.
