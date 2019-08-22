@@ -617,7 +617,7 @@ The Free monad approach allowed us to add this very useful feature almost for fr
 Thanks to all who made this article possible:
 
 * [Juspay Technology Private Limited](http://juspay.in/)
-* Vimal Kumar, Dilip Jain
+* Vimal Kumar, Dilip Jain, Arun Raghavan
 * [Contributors to Presto.Backend](https://github.com/juspay/purescript-presto-backend/graphs/contributors)
 * Vasily Gorev, Sergey Stepanenko, Shubhanshu Mani
 * And other people who were working on this project.
