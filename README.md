@@ -396,7 +396,7 @@ Going deeper to the implementation seems not that necessary for this storytellin
 
 ### Abstracting over the native libraries and types
 
-The problem is that we cannot operate by the types that are not serializable because this immediately makes the scenario unrecordable and unreplayable. Here is a sample. Back to the samples with database interaction, we might want to use a native connection type in the flows:
+The problem is that we cannot operate by the types that are not serializable because this immediately makes the scenario unrecordable and unreplayable. Why so? Back to the samples with database interaction, we might want to use a native connection type in the flows:
 
 ```haskell
 getStudentsCount :: String -> DB.Config -> Flow Int
