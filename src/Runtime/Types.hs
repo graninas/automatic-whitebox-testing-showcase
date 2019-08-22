@@ -16,7 +16,6 @@ import qualified Data.ByteString.Lazy as BSL
 import           Data.UUID          (toString)
 import           Data.Maybe         (isJust)
 import qualified Data.IntMap as MArr
-import           Data.IORef         (IORef, newIORef, readIORef, writeIORef)
 import           Data.UUID.V4       (nextRandom)
 import           Data.Aeson         (ToJSON, FromJSON, encode, decode)
 import           Data.Proxy         (Proxy(..))

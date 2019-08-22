@@ -14,7 +14,6 @@ import           Data.Aeson            (FromJSON, ToJSON, decode, encode)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy  as BSL
 import qualified Data.IntMap           as MArr
-import           Data.IORef            (IORef, newIORef, readIORef, writeIORef)
 import           Data.Maybe            (isJust)
 import           Data.Proxy            (Proxy (..))
 import           Data.Text             (Text)
