@@ -16,7 +16,7 @@ Building applications with complex business logic is rarely done without testing
 - [The recording-replaying mechanism: entries and run modes](#The-recording-replaying-mechanism-entries-and-run-modes)
 - [The recording-replaying mechanism](#The-recording-replaying-mechanism)
 - [Abstracting over the native libraries and types](#Abstracting-over-the-native-libraries-and-types)
-- [Presto.Backend possibilities and PureScript differences](#Presto--Backend-possibilities-and-PureScript-differences)
+- [Presto Backend possibilities and PureScript differences](#Presto-Backend-possibilities-and-PureScript-differences)
 - [Conclusion](#Conclusion)
 - [Acknowledges](#Acknowledges)
 
@@ -558,7 +558,7 @@ The variant with `MockedConn` won’t be called in the replaying mode. Hopefully
 
 This is how we abstract over the native DB facilities, - this “pattern” can be (and should be) used for all other native effects and subsystems. Although they can require a slightly different design, the idea will remain the same: provide a custom, possibly serializable type, do not use native types in flows, hide native calls behind a eDSL. And the flows will become clean and nice.
 
-### Presto.Backend possibilities and PureScript differences
+### Presto Backend possibilities and PureScript differences
 
 In the [Presto.Backend](https://github.com/juspay/purescript-presto-backend/tree/feature/record-replay) framework (by [Juspay](http://juspay.in)), we’ve developed a powerful technology for automated regression testing. The showcase project is mostly a less-featured port from the PureScript code, so if you are interested to know more, you can check Presto.Backend. It supports such features as configs, async flows handling, KV DB and SQL DB interaction and many others. Here goes a short overview of its possibilities related to recording-replaying mechanism.
 
