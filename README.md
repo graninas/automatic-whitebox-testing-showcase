@@ -88,10 +88,9 @@ $ player "recording.json"
 
 Notably, full mocking of the effects in the recordings is not the only thing we can do. More interesting use cases of automatic white-box testing emerge if we allow the playback to be configured in several ways.
 
-Partial mocking. It might be useful to define what effects and external calls should be mocked, and what effects should be run. For example, you might want to mock the calls to all HTTP services but prefer to interact with a real DB to test some particular scenarios. With this, you’ll get a variant of integration tests which know a lot about logic. If this “knowledge” is not something desirable, you can configure the system to make it work as a black-box test as much as needed.
+* **Partial mocking.** It might be useful to define what effects and external calls should be mocked, and what effects should be run. For example, you might want to mock the calls to all HTTP services but prefer to interact with a real DB to test some particular scenarios. With this, you’ll get a variant of integration tests which know a lot about logic. If this “knowledge” is not something desirable, you can configure the system to make it work as a black-box test as much as needed.
 Selective verification. By default, every step is checked for match with the recorded one: input parameters, additional info, output result. But sometimes it’s needed to disable such verification for a set of entries while still doing the mocking.
-
-Disabled entries. Sometimes the step should not affect the replaying process at all. For example, it’s possible to disable all the log entries so they won’t be played and checked somehow (the real effects will be evaluated).
+* **Disabled entries.** Sometimes the step should not affect the replaying process at all. For example, it’s possible to disable all the log entries so they won’t be played and checked somehow (the real effects will be evaluated).
 
 For even more advanced situations, a subtle tuning of the replaying process can be done with both global player configs and configs of a specific entry in the recording.
 
