@@ -7,6 +7,7 @@
 {-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE TypeApplications          #-}
 {-# LANGUAGE RecordWildCards           #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 
 module Playback.Machine where
 
@@ -77,13 +78,13 @@ popNextRecordingEntry PlayerRuntime{..} = do
   pure mbItem
 
 popNextRRItem
-  :: RRItem rrItem
+  :: forall rrItem native
+   . RRItem rrItem
   => PlayerRuntime
-  -> Proxy rrItem
   -> IO (Either PlaybackError (RecordingEntry, rrItem))
-popNextRRItem playerRt rrItemP = do
+popNextRRItem playerRt  = do
   mbRecordingEntry <- popNextRecordingEntry playerRt
-  let flowStep = getTag rrItemP
+  let flowStep = getTag $ Proxy @rrItem
   -- let flowStepInfo = getInfo' rrItemDict
   pure $ do
     recordingEntry <- note (unexpectedRecordingEnd "") mbRecordingEntry
@@ -92,14 +93,14 @@ popNextRRItem playerRt rrItemP = do
     pure (recordingEntry, rrItem)
 
 popNextRRItemAndResult
-  :: RRItem rrItem
+  :: forall rrItem native
+   . RRItem rrItem
   => MockedResult rrItem native
   => PlayerRuntime
-  -> Proxy rrItem
   -> IO (Either PlaybackError (RecordingEntry, rrItem, native))
-popNextRRItemAndResult playerRt rrItemP = do
-  let flowStep = getTag rrItemP
-  eNextRRItem <- popNextRRItem playerRt rrItemP
+popNextRRItemAndResult playerRt  = do
+  let flowStep = getTag $ Proxy @rrItem
+  eNextRRItem <- popNextRRItem playerRt
   pure $ do
     (recordingEntry, rrItem) <- eNextRRItem
     let mbNative = getMock rrItem
@@ -127,16 +128,16 @@ getCurrentEntryReplayMode PlayerRuntime{..} = do
     pure mode
 
 replayWithGlobalConfig 
-  :: RRItem rrItem
+  :: forall rrItem native
+   . RRItem rrItem
   => MockedResult rrItem native
   => PlayerRuntime
-  -> Proxy rrItem
   -> IO native 
   -> (native -> rrItem)
   -> Either PlaybackError (RecordingEntry, rrItem, native)
   -> IO native
-replayWithGlobalConfig playerRt rrItemP ioAct mkRRItem eNextRRItemRes = do
-  let tag = getTag rrItemP
+replayWithGlobalConfig playerRt  ioAct mkRRItem eNextRRItemRes = do
+  let tag = getTag $ Proxy @rrItem
   let config = checkForReplayConfig playerRt tag
   case config of
     GlobalNoVerify -> case eNextRRItemRes of
@@ -156,20 +157,20 @@ checkForReplayConfig  PlayerRuntime{..} tag | tag `elem` disableMocking  = Globa
                                             | otherwise                  = GlobalNormal
 
 replay
-  :: RRItem rrItem
+  :: forall rrItem native
+   . RRItem rrItem
   => MockedResult rrItem native
   => PlayerRuntime
-  -> Proxy rrItem
   -> (native -> rrItem)
   -> IO native
   -> IO native
-replay playerRt@PlayerRuntime{..} rrItemP mkRRItem ioAct 
-  | getTag rrItemP `elem` skipEntries = ioAct
+replay playerRt@PlayerRuntime{..} mkRRItem ioAct 
+  | getTag (Proxy @rrItem) `elem` skipEntries = ioAct
   | otherwise = do
       entryReplayMode <- getCurrentEntryReplayMode playerRt
-      eNextRRItemRes <- popNextRRItemAndResult playerRt Proxy
+      eNextRRItemRes <- popNextRRItemAndResult playerRt
       case entryReplayMode of
-        Normal -> replayWithGlobalConfig playerRt Proxy ioAct mkRRItem eNextRRItemRes
+        Normal -> replayWithGlobalConfig playerRt ioAct mkRRItem eNextRRItemRes
         NoVerify -> case eNextRRItemRes of
           Left err -> setReplayingError playerRt err
           Right stepInfo@(_, _, r) -> pure r
@@ -178,15 +179,15 @@ replay playerRt@PlayerRuntime{..} rrItemP mkRRItem ioAct
 
 
 record
-  :: RRItem rrItem
+  ::forall rrItem native
+   . RRItem rrItem
   => RecorderRuntime
-  -> Proxy rrItem
   -> (native -> rrItem)
   -> IO native
   -> IO native
-record recorderRt@RecorderRuntime{..} rrItemP mkRRItem ioAct = do
+record recorderRt@RecorderRuntime{..} mkRRItem ioAct = do
   native <- ioAct
-  let tag = getTag rrItemP
+  let tag = getTag $ Proxy @rrItem
   when (tag `notElem` disableEntries)
     $ pushRecordingEntry recorderRt $ toRecordingEntry (mkRRItem native) 0 Normal
   pure native
