@@ -77,24 +77,24 @@ mkRunDBEntry (MockedConn dbName) qInfo dbRes = RunDBEntry dbName qInfo $ encodeT
 
 
 instance RRItem GenerateGUIDEntry where
-  toRecordingEntry rrItem idx = RecordingEntry idx "GenerateGUIDEntry" $ encodeToStr rrItem
-  fromRecordingEntry (RecordingEntry _ _ payload) = decodeFromStr payload
+  toRecordingEntry rrItem idx mode  = RecordingEntry idx mode "GenerateGUIDEntry" $ encodeToStr rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
   getTag _ = "GenerateGUIDEntry"
 
 instance MockedResult GenerateGUIDEntry String where
   getMock (GenerateGUIDEntry g) = Just g
 
 instance RRItem RunIOEntry where
-  toRecordingEntry rrItem idx = RecordingEntry idx "RunIOEntry" $ encodeToStr rrItem
-  fromRecordingEntry (RecordingEntry _ _ payload) = decodeFromStr payload
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "RunIOEntry" $ encodeToStr rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
   getTag _ = "RunIOEntry"
 
 instance FromJSON a => MockedResult RunIOEntry a where
   getMock (RunIOEntry r) = decodeFromStr r
 
 instance RRItem LogInfoEntry where
-  toRecordingEntry rrItem idx = RecordingEntry idx "LogInfoEntry" $ encodeToStr rrItem
-  fromRecordingEntry (RecordingEntry _ _ payload) = decodeFromStr payload
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "LogInfoEntry" $ encodeToStr rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
   getTag _ = "LogInfoEntry"
 
 instance MockedResult LogInfoEntry () where
@@ -103,16 +103,16 @@ instance MockedResult LogInfoEntry () where
 
 
 instance RRItem ConnectEntry where
-  toRecordingEntry rrItem idx = RecordingEntry idx "ConnectEntry" $ encodeToStr rrItem
-  fromRecordingEntry (RecordingEntry _ _ payload) = decodeFromStr payload
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "ConnectEntry" $ encodeToStr rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
   getTag _ = "ConnectEntry"
 
 instance MockedResult ConnectEntry Connection where
   getMock (ConnectEntry _ dbName) = Just $ MockedConn dbName
 
 instance RRItem RunDBEntry where
-  toRecordingEntry rrItem idx = RecordingEntry idx "RunDBEntry" $ encodeToStr rrItem
-  fromRecordingEntry (RecordingEntry _ _ payload) = decodeFromStr payload
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "RunDBEntry" $ encodeToStr rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
   getTag _ = "RunDBEntry"
 
 instance FromJSON a => MockedResult RunDBEntry a where

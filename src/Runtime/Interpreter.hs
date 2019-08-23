@@ -43,7 +43,7 @@ withRunMode
 withRunMode RegularMode _ act = act
 
 withRunMode (RecordingMode recorderRt) mkRRItem act
-  = record recorderRt Proxy mkRRItem act
+  = record recorderRt mkRRItem act
 
 withRunMode (ReplayingMode playerRt) mkRRItem act
   = replay playerRt mkRRItem act

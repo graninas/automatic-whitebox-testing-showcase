@@ -11,6 +11,7 @@ module Playback.Types where
 
 import           Control.Monad      (unless, when, void)
 import           Control.Monad.Free
+import           Data.Vector
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy as BSL
 import           Data.UUID          (toString)
@@ -26,15 +27,22 @@ import           GHC.Generics       (Generic)
 type EntryIndex = Int
 type EntryName = String
 type EntryPayload = String
-data RecordingEntry = RecordingEntry EntryIndex EntryName EntryPayload
+data RecordingEntry = RecordingEntry EntryIndex EntryReplayingMode EntryName EntryPayload
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
-type RecordingEntries = MArr.IntMap RecordingEntry
+type RecordingEntries = Vector RecordingEntry
 newtype Recording = Recording RecordingEntries
+
+data GlobalReplayingMode = GlobalNormal | GlobalNoVerify | GlobalNoMocking | GlobalSkip
+
+data EntryReplayingMode = Normal | NoVerify | NoMock
+  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+
+
 
 class (Eq rrItem, ToJSON rrItem, FromJSON rrItem)
   => RRItem rrItem where
-  toRecordingEntry   :: rrItem -> Int -> RecordingEntry
+  toRecordingEntry   :: rrItem -> Int -> EntryReplayingMode -> RecordingEntry
   fromRecordingEntry :: RecordingEntry -> Maybe rrItem
   getTag             :: Proxy rrItem -> String
 
@@ -52,20 +60,25 @@ data PlaybackErrorType
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
 data PlaybackError = PlaybackError
-  { errorType :: PlaybackErrorType
+  { errorType    :: PlaybackErrorType
   , errorMessage :: String
   }
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
 -- TODO: MVar
 data RecorderRuntime = RecorderRuntime
-  { recordingRef :: IORef RecordingEntries
+  { recordingRef   :: IORef RecordingEntries
+  , disableEntries :: [String]
   }
 
 data PlayerRuntime = PlayerRuntime
-  { recording :: RecordingEntries
-  , stepRef :: IORef Int
-  , errorRef :: IORef (Maybe PlaybackError)
+  { recording       :: RecordingEntries
+  , stepRef         :: IORef Int
+  , errorRef        :: IORef (Maybe PlaybackError)
+  , disableVerify   :: [String]
+  , disableMocking  :: [String]
+  , skipEntries     :: [String]
+  , entriesFiltered :: Bool
   }
 
 
