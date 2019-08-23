@@ -26,6 +26,7 @@ import           GHC.Generics          (Generic)
 
 import qualified DB.Native             as DB
 import           Types
+import           Runtime.Options
 
 data DatabaseF next where
   Query :: String -> ([a] -> next) -> DatabaseF next
@@ -45,6 +46,8 @@ data FlowF next where
   LogInfo :: String -> (() -> next) -> FlowF next
   Fork :: String -> String -> Flow s -> (() -> next) -> FlowF next
   RunSysCmd :: String -> (String -> next) -> FlowF next
+  GetOption :: OptionEntity k v => k -> (Maybe v -> next) -> FlowF next
+  SetOption :: OptionEntity k v => k -> v -> (() -> next) -> FlowF next
 
   Connect :: DBName -> DB.Config -> (Connection -> next) -> FlowF next
   RunDB :: (ToJSON s, FromJSON s)
@@ -58,6 +61,8 @@ instance Functor FlowF where
   fmap f (LogInfo msg next)             = LogInfo msg (f . next)
   fmap f (Fork desc guid ioAct next)    = Fork desc guid ioAct (f.next)
   fmap f (RunSysCmd cmd next)           = RunSysCmd cmd (f.next)
+  fmap f (GetOption k next)             = GetOption k (f.next)
+  fmap f (SetOption k v next)           = SetOption k v (f.next)
 
   fmap f (Connect dbName dbConfig next) = Connect dbName dbConfig (f . next)
   fmap f (RunDB conn qInfo db next)     = RunDB conn qInfo db (f . next)
@@ -82,6 +87,12 @@ forkFlow description flow = do
 
 runSysCmd :: String -> Flow String
 runSysCmd cmd = liftF $ RunSysCmd cmd id
+
+getOption :: OptionEntity k v => k -> Flow (Maybe v)
+getOption k = liftF $ GetOption k id
+
+setOption :: OptionEntity k v => k -> v -> Flow ()
+setOption k v = liftF $ SetOption k v id
 
 connect :: DBName -> DB.Config -> Flow Connection
 connect dbName dbCfg = liftF $ Connect dbName dbCfg id

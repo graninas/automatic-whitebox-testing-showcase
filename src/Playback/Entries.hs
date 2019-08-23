@@ -27,6 +27,25 @@ import           GHC.Generics          (Generic)
 import qualified DB.Native             as DB
 import           Playback.Types
 import           Types
+import           Runtime.Options
+
+data SetOptionEntry = SetOptionEntry
+  { key   :: String
+  , value :: String
+  }
+  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+
+mkSetOptionEntry :: OptionEntity k v => k -> v -> () -> SetOptionEntry
+mkSetOptionEntry k v _ = SetOptionEntry (encodeToStr k) (encodeToStr v)
+
+data GetOptionEntry = GetOptionEntry
+  { key   :: String
+  , value :: String
+  }
+  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+
+mkGetOptionEntry :: OptionEntity k v => k -> Maybe v -> GetOptionEntry
+mkGetOptionEntry k mv = GetOptionEntry (encodeToStr k) (encodeToStr mv)
 
 data RunSysCmdEntry = RunSysCmdEntry
   { cmd    :: String
@@ -94,6 +113,22 @@ mkRunDBEntry
   -> RunDBEntry
 mkRunDBEntry (NativeConn dbName _) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToStr dbRes
 mkRunDBEntry (MockedConn dbName) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToStr dbRes
+
+instance RRItem GetOptionEntry where
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "GetOptionEntry" $ encodeToStr rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
+  getTag _ = "GetOptionEntry"
+
+instance FromJSON v => MockedResult GetOptionEntry v where
+  getMock GetOptionEntry{..} = decodeFromStr value
+
+instance RRItem SetOptionEntry where
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "SetOptionEntry" $ encodeToStr rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
+  getTag _ = "SetOptionEntry"
+
+instance MockedResult SetOptionEntry () where
+  getMock _ = Just ()
 
 instance RRItem RunSysCmdEntry where
   toRecordingEntry rrItem idx mode = RecordingEntry idx mode "RunSysCmdEntry" $ encodeToStr rrItem

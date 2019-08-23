@@ -21,6 +21,7 @@ import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy  as BSL
 import qualified Data.IntMap           as MArr
 import           Data.IORef            (IORef, newIORef, readIORef, writeIORef)
+import qualified Data.Map.Strict as Map
 import           Data.Maybe            (isJust)
 import           Data.Map.Strict       as Map
 import           Data.Monoid           ((<>))
@@ -88,7 +89,8 @@ forkBackendRuntime flowGUID Runtime{..} = do
   case mbForkedMode of
     Nothing         -> pure Nothing
     Just forkedMode -> pure $ Just $ Runtime
-          {runMode = forkedMode
+          { runMode = forkedMode
+          , ..
           }
 
 -- Entry point into the recording replaying mechanism
@@ -121,6 +123,21 @@ runDatabase nativeConn = foldFree (interpretDatabaseF nativeConn)
 --------------------------------------------------------------------------------
 -- Flow interpreter
 interpretFlowF :: Runtime -> FlowF a -> IO a
+
+interpretFlowF Runtime{..} (GetOption k next) = 
+  next <$> withRunMode runMode (mkGetOptionEntry k) maybeValue
+  where 
+    maybeValue = do
+          m <- readMVar options
+          pure $ decodeFromStr =<< Map.lookup (encodeToStr k) m
+
+interpretFlowF Runtime{..} (SetOption k v next) =
+  next <$> withRunMode runMode (mkSetOptionEntry k v) set
+  where
+    set = do
+      m <- takeMVar options
+      let newMap = Map.insert (encodeToStr k) (encodeToStr v) m
+      putMVar options newMap
 
 interpretFlowF rt (RunSysCmd cmd next) = do
   next <$> withRunMode (runMode rt) (mkRunSysCmdEntry cmd) (runCmd cmd)
