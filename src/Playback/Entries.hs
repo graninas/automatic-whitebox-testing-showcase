@@ -6,6 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
 {-# LANGUAGE DuplicateRecordFields     #-}
+{-# LANGUAGE RecordWildCards           #-}
 
 module Playback.Entries where
 
@@ -26,6 +27,15 @@ import           GHC.Generics          (Generic)
 import qualified DB.Native             as DB
 import           Playback.Types
 import           Types
+
+data RunSysCmdEntry = RunSysCmdEntry
+  { cmd    :: String
+  , result :: String
+  }
+  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+
+mkRunSysCmdEntry :: String -> String -> RunSysCmdEntry
+mkRunSysCmdEntry cmd result = RunSysCmdEntry cmd result
 
 data ForkFlowEntry = ForkFlowEntry
   { description :: String
@@ -84,6 +94,14 @@ mkRunDBEntry
   -> RunDBEntry
 mkRunDBEntry (NativeConn dbName _) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToStr dbRes
 mkRunDBEntry (MockedConn dbName) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToStr dbRes
+
+instance RRItem RunSysCmdEntry where
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "RunSysCmdEntry" $ encodeToStr rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
+  getTag _ = "RunSysCmdEntry"
+
+instance MockedResult RunSysCmdEntry String where
+  getMock RunSysCmdEntry {..} = Just result
 
 instance RRItem ForkFlowEntry where
   toRecordingEntry rrItem idx mode = RecordingEntry idx mode "ForkFlowEntry" $ encodeToStr  rrItem

@@ -36,6 +36,7 @@ import           Language
 import           Playback.Entries
 import           Playback.Machine
 import           Playback.Types
+import           Runtime.SystemCommands
 import           Runtime.Types
 import           Types
 
@@ -120,6 +121,9 @@ runDatabase nativeConn = foldFree (interpretDatabaseF nativeConn)
 --------------------------------------------------------------------------------
 -- Flow interpreter
 interpretFlowF :: Runtime -> FlowF a -> IO a
+
+interpretFlowF rt (RunSysCmd cmd next) = do
+  next <$> withRunMode (runMode rt) (mkRunSysCmdEntry cmd) (runCmd cmd)
 
 interpretFlowF rt (Fork desc flowGUID flow next) = do
   mbForkedRt <- forkBackendRuntime flowGUID rt

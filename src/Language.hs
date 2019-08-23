@@ -44,6 +44,7 @@ data FlowF next where
   RunIO :: (ToJSON s, FromJSON s) => IO s -> (s -> next) -> FlowF next
   LogInfo :: String -> (() -> next) -> FlowF next
   Fork :: String -> String -> Flow s -> (() -> next) -> FlowF next
+  RunSysCmd :: String -> (String -> next) -> FlowF next
 
   Connect :: DBName -> DB.Config -> (Connection -> next) -> FlowF next
   RunDB :: (ToJSON s, FromJSON s)
@@ -56,6 +57,7 @@ instance Functor FlowF where
   fmap f (RunIO ioAct next)             = RunIO ioAct (f . next)
   fmap f (LogInfo msg next)             = LogInfo msg (f . next)
   fmap f (Fork desc guid ioAct next)    = Fork desc guid ioAct (f.next)
+  fmap f (RunSysCmd cmd next)           = RunSysCmd cmd (f.next)
 
   fmap f (Connect dbName dbConfig next) = Connect dbName dbConfig (f . next)
   fmap f (RunDB conn qInfo db next)     = RunDB conn qInfo db (f . next)
@@ -77,6 +79,9 @@ forkFlow description flow = do
   unless (null description) $ logInfo $ "Flow forked. Description: " <> description <> " GUID: " <> flowGUID
   when   (null description) $ logInfo $ "Flow forked. GUID: " <> flowGUID
   void $ liftF $ Fork description flowGUID flow id
+
+runSysCmd :: String -> Flow String
+runSysCmd cmd = liftF $ RunSysCmd cmd id
 
 connect :: DBName -> DB.Config -> Flow Connection
 connect dbName dbCfg = liftF $ Connect dbName dbCfg id
