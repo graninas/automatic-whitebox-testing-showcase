@@ -28,6 +28,7 @@ dependencies:
 - bytestring
 - containers
 - vector
+- process
 
 library:
   source-dirs: src
