@@ -6,9 +6,11 @@
 {-# LANGUAGE TypeSynonymInstances      #-}
 {-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE TypeApplications          #-}
+{-# LANGUAGE DuplicateRecordFields     #-}
 
 module Playback.Types where
 
+import           Control.Concurrent.MVar (MVar)
 import           Control.Monad      (unless, when, void)
 import           Control.Monad.Free
 import           Data.Vector
@@ -16,6 +18,8 @@ import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy as BSL
 import           Data.UUID          (toString)
 import           Data.Maybe         (isJust)
+import           Data.Map.Strict    (Map)
+import qualified Data.Map.Strict as Map
 import qualified Data.IntMap as MArr
 import           Data.IORef         (IORef, newIORef, readIORef, writeIORef)
 import           Data.UUID.V4       (nextRandom)
@@ -67,18 +71,23 @@ data PlaybackError = PlaybackError
 
 -- TODO: MVar
 data RecorderRuntime = RecorderRuntime
-  { recordingRef   :: IORef RecordingEntries
-  , disableEntries :: [String]
+  { flowGUID            :: String
+  , recordingRef        :: IORef RecordingEntries
+  , forkedRecordingsVar :: MVar ( Map String (MVar RecordingEntries))
+  , disableEntries      :: [String]
   }
 
 data PlayerRuntime = PlayerRuntime
-  { recording       :: RecordingEntries
-  , stepRef         :: IORef Int
-  , errorRef        :: IORef (Maybe PlaybackError)
-  , disableVerify   :: [String]
-  , disableMocking  :: [String]
-  , skipEntries     :: [String]
-  , entriesFiltered :: Bool
+  { recording            :: RecordingEntries
+  , stepRef              :: IORef Int
+  , errorRef             :: IORef (Maybe PlaybackError)
+  , disableVerify        :: [String]
+  , disableMocking       :: [String]
+  , skipEntries          :: [String]
+  , entriesFiltered      :: Bool
+  , flowGUID             :: String
+  , forkedFlowRecordings :: Map String RecordingEntries
+  , forkedFlowErrorsVar  :: MVar (Map String PlaybackError)
   }
 
 

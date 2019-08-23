@@ -17,6 +17,7 @@ import qualified Data.ByteString.Lazy  as BSL
 import qualified Data.IntMap           as MArr
 import           Data.IORef            (IORef, newIORef, readIORef, writeIORef)
 import           Data.Maybe            (isJust)
+import           Data.Monoid           ((<>))
 import           Data.Proxy            (Proxy (..))
 import           Data.Text             (Text)
 import           Data.UUID             (toString)
@@ -42,6 +43,7 @@ data FlowF next where
   GenerateGUID :: (String -> next) -> FlowF next
   RunIO :: (ToJSON s, FromJSON s) => IO s -> (s -> next) -> FlowF next
   LogInfo :: String -> (() -> next) -> FlowF next
+  Fork :: String -> String -> Flow s -> (() -> next) -> FlowF next
 
   Connect :: DBName -> DB.Config -> (Connection -> next) -> FlowF next
   RunDB :: (ToJSON s, FromJSON s)
@@ -53,6 +55,7 @@ instance Functor FlowF where
   fmap f (GenerateGUID next)            = GenerateGUID (f . next)
   fmap f (RunIO ioAct next)             = RunIO ioAct (f . next)
   fmap f (LogInfo msg next)             = LogInfo msg (f . next)
+  fmap f (Fork desc guid ioAct next)    = Fork desc guid ioAct (f.next)
 
   fmap f (Connect dbName dbConfig next) = Connect dbName dbConfig (f . next)
   fmap f (RunDB conn qInfo db next)     = RunDB conn qInfo db (f . next)
@@ -67,6 +70,13 @@ runIO ioAct = liftF $ RunIO ioAct id
 
 logInfo :: String -> Flow ()
 logInfo msg = liftF $ LogInfo msg id
+
+forkFlow :: (ToJSON s, FromJSON s) => String -> Flow s -> Flow ()
+forkFlow description flow = do
+  flowGUID <- generateGUID
+  unless (null description) $ logInfo $ "Flow forked. Description: " <> description <> " GUID: " <> flowGUID
+  when   (null description) $ logInfo $ "Flow forked. GUID: " <> flowGUID
+  void $ liftF $ Fork description flowGUID flow id
 
 connect :: DBName -> DB.Config -> Flow Connection
 connect dbName dbCfg = liftF $ Connect dbName dbCfg id

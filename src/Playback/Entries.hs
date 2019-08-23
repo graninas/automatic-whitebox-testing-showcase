@@ -5,6 +5,7 @@
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
+{-# LANGUAGE DuplicateRecordFields     #-}
 
 module Playback.Entries where
 
@@ -25,6 +26,15 @@ import           GHC.Generics          (Generic)
 import qualified DB.Native             as DB
 import           Playback.Types
 import           Types
+
+data ForkFlowEntry = ForkFlowEntry
+  { description :: String
+  , guid        :: String
+  }
+  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+
+mkForkFlowEntry :: String -> String -> () -> ForkFlowEntry
+mkForkFlowEntry desc guid _ = ForkFlowEntry desc guid
 
 data GenerateGUIDEntry = GenerateGUIDEntry
   { guid :: String
@@ -75,6 +85,13 @@ mkRunDBEntry
 mkRunDBEntry (NativeConn dbName _) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToStr dbRes
 mkRunDBEntry (MockedConn dbName) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToStr dbRes
 
+instance RRItem ForkFlowEntry where
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "ForkFlowEntry" $ encodeToStr  rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
+  getTag _ = "ForkFlowEntry"
+
+instance MockedResult ForkFlowEntry () where
+  getMock _ = Just ()
 
 instance RRItem GenerateGUIDEntry where
   toRecordingEntry rrItem idx mode  = RecordingEntry idx mode "GenerateGUIDEntry" $ encodeToStr rrItem
