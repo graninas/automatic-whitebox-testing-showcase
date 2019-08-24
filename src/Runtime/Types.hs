@@ -18,7 +18,6 @@ import           Data.UUID          (toString)
 import           Data.Maybe         (isJust)
 import           Data.Map.Strict (Map)
 import qualified Data.IntMap as MArr
-import           Data.IORef         (IORef, newIORef, readIORef, writeIORef)
 import           Data.UUID.V4       (nextRandom)
 import           Data.Aeson         (ToJSON, FromJSON, encode, decode)
 import           Data.Proxy         (Proxy(..))
