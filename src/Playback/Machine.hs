@@ -11,6 +11,9 @@
 
 module Playback.Machine where
 
+import           Control.Concurrent.MVar (MVar, takeMVar, putMVar
+                                         , isEmptyMVar, swapMVar, readMVar)
+import           Control.Exception       (throwIO)
 import           Control.Monad      (unless, when, void)
 import           Control.Monad.Free
 import qualified Data.ByteString.Char8 as BS
@@ -19,8 +22,6 @@ import           Data.UUID          (toString)
 import           Data.Maybe         (isJust, fromMaybe)
 import qualified Data.Vector as V
 import           Data.Vector ((!?))
--- import qualified Data.IntMap as MArr
-import           Data.IORef         (IORef, newIORef, readIORef, writeIORef)
 import           Data.UUID.V4       (nextRandom)
 import           Data.Aeson         (ToJSON, FromJSON, encode, decode)
 import           Data.Proxy         (Proxy(..))
@@ -57,24 +58,25 @@ itemMismatch flowStep recordingEntry
 
 setReplayingError :: PlayerRuntime -> PlaybackError -> IO a
 setReplayingError playerRt err = do
-  writeIORef (errorRef playerRt) $ Just err
-  error $ show err
+  void $ takeMVar $ errorMVar playerRt
+  putMVar (errorMVar playerRt) err
+  throwIO $ ReplayingException err
 
 pushRecordingEntry
   :: RecorderRuntime
   -> RecordingEntry
   -> IO ()
 pushRecordingEntry recorderRt (RecordingEntry _ mode n p) = do
-  entries <- readIORef $ recordingRef recorderRt
+  entries <- takeMVar $ recordingMVar recorderRt
   let idx = (V.length entries)
   let re = RecordingEntry idx mode n p
-  writeIORef (recordingRef recorderRt) $ V.snoc entries re
+  putMVar (recordingMVar recorderRt) $ V.snoc entries re
 
 popNextRecordingEntry :: PlayerRuntime -> IO (Maybe RecordingEntry)
 popNextRecordingEntry PlayerRuntime{..} = do
-  cur <- readIORef stepRef
+  cur <- takeMVar stepMVar
   let mbItem = (!?) recording cur
-  when (isJust mbItem) $ writeIORef stepRef (cur + 1)
+  when (isJust mbItem) $ putMVar stepMVar (cur + 1)
   pure mbItem
 
 popNextRRItem
@@ -85,11 +87,10 @@ popNextRRItem
 popNextRRItem playerRt  = do
   mbRecordingEntry <- popNextRecordingEntry playerRt
   let flowStep = getTag $ Proxy @rrItem
-  -- let flowStepInfo = getInfo' rrItemDict
   pure $ do
-    recordingEntry <- note (unexpectedRecordingEnd "") mbRecordingEntry
-    let unknownErr = unknownRRItem $ show recordingEntry
-    rrItem <- note (unknownErr "") $ fromRecordingEntry recordingEntry
+    recordingEntry <- note (unexpectedRecordingEnd flowStep) mbRecordingEntry
+    let unknownErr = unknownRRItem flowStep $ show recordingEntry
+    rrItem <- note unknownErr $ fromRecordingEntry recordingEntry
     pure (recordingEntry, rrItem)
 
 popNextRRItemAndResult
@@ -116,23 +117,22 @@ compareRRItems
   -> IO ()
 compareRRItems playerRt (recordingEntry, rrItem, mockedResult) flowRRItem = do
   when (rrItem /= flowRRItem) $ do
-    -- let flowStep = encodeJSON'  flowRRItem
     let flowStep = encodeToStr flowRRItem
     setReplayingError playerRt $ itemMismatch flowStep (show recordingEntry)
 
 getCurrentEntryReplayMode :: PlayerRuntime -> IO EntryReplayingMode
 getCurrentEntryReplayMode PlayerRuntime{..} = do
-  cur <- readIORef stepRef
+  cur <- readMVar stepMVar
   pure $ fromMaybe Normal $ do
     (RecordingEntry _ mode _ _) <- (!?) recording cur
     pure mode
 
-replayWithGlobalConfig 
+replayWithGlobalConfig
   :: forall rrItem native
    . RRItem rrItem
   => MockedResult rrItem native
   => PlayerRuntime
-  -> IO native 
+  -> IO native
   -> (native -> rrItem)
   -> Either PlaybackError (RecordingEntry, rrItem, native)
   -> IO native
@@ -164,7 +164,7 @@ replay
   -> (native -> rrItem)
   -> IO native
   -> IO native
-replay playerRt@PlayerRuntime{..} mkRRItem ioAct 
+replay playerRt@PlayerRuntime{..} mkRRItem ioAct
   | getTag (Proxy @rrItem) `elem` skipEntries = ioAct
   | otherwise = do
       entryReplayMode <- getCurrentEntryReplayMode playerRt

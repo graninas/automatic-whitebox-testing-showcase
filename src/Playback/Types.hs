@@ -11,6 +11,7 @@
 module Playback.Types where
 
 import           Control.Concurrent.MVar (MVar)
+import           Control.Exception (Exception)
 import           Control.Monad      (unless, when, void)
 import           Control.Monad.Free
 import           Data.Vector
@@ -21,7 +22,6 @@ import           Data.Maybe         (isJust)
 import           Data.Map.Strict    (Map)
 import qualified Data.Map.Strict as Map
 import qualified Data.IntMap as MArr
-import           Data.IORef         (IORef, newIORef, readIORef, writeIORef)
 import           Data.UUID.V4       (nextRandom)
 import           Data.Aeson         (ToJSON, FromJSON, encode, decode)
 import           Data.Proxy         (Proxy(..))
@@ -69,18 +69,21 @@ data PlaybackError = PlaybackError
   }
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
--- TODO: MVar
+data ReplayingException = ReplayingException PlaybackError
+  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+instance Exception ReplayingException
+
 data RecorderRuntime = RecorderRuntime
   { flowGUID            :: String
-  , recordingRef        :: IORef RecordingEntries
+  , recordingMVar       :: MVar RecordingEntries
   , forkedRecordingsVar :: MVar ( Map String (MVar RecordingEntries))
   , disableEntries      :: [String]
   }
 
 data PlayerRuntime = PlayerRuntime
   { recording            :: RecordingEntries
-  , stepRef              :: IORef Int
-  , errorRef             :: IORef (Maybe PlaybackError)
+  , stepMVar             :: MVar Int
+  , errorMVar            :: MVar PlaybackError
   , disableVerify        :: [String]
   , disableMocking       :: [String]
   , skipEntries          :: [String]
