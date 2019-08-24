@@ -13,6 +13,7 @@ module Playback.Machine where
 
 import           Control.Concurrent.MVar (MVar, takeMVar, putMVar
                                          , isEmptyMVar, swapMVar, readMVar)
+import           Control.Exception       (throwIO)
 import           Control.Monad      (unless, when, void)
 import           Control.Monad.Free
 import qualified Data.ByteString.Char8 as BS
@@ -21,7 +22,6 @@ import           Data.UUID          (toString)
 import           Data.Maybe         (isJust, fromMaybe)
 import qualified Data.Vector as V
 import           Data.Vector ((!?))
--- import qualified Data.IntMap as MArr
 import           Data.UUID.V4       (nextRandom)
 import           Data.Aeson         (ToJSON, FromJSON, encode, decode)
 import           Data.Proxy         (Proxy(..))
@@ -58,11 +58,9 @@ itemMismatch flowStep recordingEntry
 
 setReplayingError :: PlayerRuntime -> PlaybackError -> IO a
 setReplayingError playerRt err = do
-  flag <- isEmptyMVar (errorMVar playerRt)
-  if flag
-    then putMVar (errorMVar playerRt) err
-    else void $ swapMVar (errorMVar playerRt) err
-  error $ show err
+  void $ takeMVar $ errorMVar playerRt
+  putMVar (errorMVar playerRt) err
+  throwIO $ ReplayingException err
 
 pushRecordingEntry
   :: RecorderRuntime
@@ -89,11 +87,10 @@ popNextRRItem
 popNextRRItem playerRt  = do
   mbRecordingEntry <- popNextRecordingEntry playerRt
   let flowStep = getTag $ Proxy @rrItem
-  -- let flowStepInfo = getInfo' rrItemDict
   pure $ do
-    recordingEntry <- note (unexpectedRecordingEnd "") mbRecordingEntry
-    let unknownErr = unknownRRItem $ show recordingEntry
-    rrItem <- note (unknownErr "") $ fromRecordingEntry recordingEntry
+    recordingEntry <- note (unexpectedRecordingEnd flowStep) mbRecordingEntry
+    let unknownErr = unknownRRItem flowStep $ show recordingEntry
+    rrItem <- note unknownErr $ fromRecordingEntry recordingEntry
     pure (recordingEntry, rrItem)
 
 popNextRRItemAndResult
@@ -120,7 +117,6 @@ compareRRItems
   -> IO ()
 compareRRItems playerRt (recordingEntry, rrItem, mockedResult) flowRRItem = do
   when (rrItem /= flowRRItem) $ do
-    -- let flowStep = encodeJSON'  flowRRItem
     let flowStep = encodeToStr flowRRItem
     setReplayingError playerRt $ itemMismatch flowStep (show recordingEntry)
 

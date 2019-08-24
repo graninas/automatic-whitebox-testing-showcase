@@ -11,6 +11,7 @@
 module Playback.Types where
 
 import           Control.Concurrent.MVar (MVar)
+import           Control.Exception (Exception)
 import           Control.Monad      (unless, when, void)
 import           Control.Monad.Free
 import           Data.Vector
@@ -68,7 +69,10 @@ data PlaybackError = PlaybackError
   }
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
--- TODO: MVar
+data ReplayingException = ReplayingException PlaybackError
+  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+instance Exception ReplayingException
+
 data RecorderRuntime = RecorderRuntime
   { flowGUID            :: String
   , recordingMVar       :: MVar RecordingEntries
