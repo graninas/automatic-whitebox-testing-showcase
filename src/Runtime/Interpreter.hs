@@ -13,14 +13,14 @@
 module Runtime.Interpreter where
 
 import           Control.Concurrent (forkIO)
-import           Control.Concurrent.MVar
+import           Control.Concurrent.MVar (newEmptyMVar, newMVar, takeMVar
+                                         , putMVar, readMVar)
 import           Control.Monad         (unless, void, when)
 import           Control.Monad.Free
 import           Data.Aeson            (FromJSON, ToJSON, decode, encode)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy  as BSL
 import qualified Data.IntMap           as MArr
-import           Data.IORef            (IORef, newIORef, readIORef, writeIORef)
 import qualified Data.Map.Strict as Map
 import           Data.Maybe            (isJust)
 import           Data.Map.Strict       as Map
@@ -41,7 +41,7 @@ import           Runtime.SystemCommands
 import           Runtime.Types
 import           Types
 
-forkF :: Runtime -> Flow a -> IO () 
+forkF :: Runtime -> Flow a -> IO ()
 forkF rt flow = void $ forkIO $ void $ runFlow rt flow
 
 forkPlayerRt :: String -> PlayerRuntime -> IO (Maybe PlayerRuntime)
@@ -57,12 +57,12 @@ forkPlayerRt newFlowGUID PlayerRuntime{..} =
       putMVar forkedFlowErrorsVar forkedFlowErrors'
       pure Nothing
     Just recording' -> do
-      stepVar'  <- newIORef 0
-      errorVar' <- newIORef Nothing
-      pure $ Just $ PlayerRuntime
+      stepVar'  <- newMVar 0
+      errorVar' <- newEmptyMVar
+      pure $ Just PlayerRuntime
         { flowGUID = newFlowGUID
-        , stepRef = stepVar'
-        , errorRef = errorVar'
+        , stepMVar = stepVar'
+        , errorMVar = errorVar'
         , recording = recording'
         , ..
         }
@@ -124,9 +124,9 @@ runDatabase nativeConn = foldFree (interpretDatabaseF nativeConn)
 -- Flow interpreter
 interpretFlowF :: Runtime -> FlowF a -> IO a
 
-interpretFlowF Runtime{..} (GetOption k next) = 
+interpretFlowF Runtime{..} (GetOption k next) =
   next <$> withRunMode runMode (mkGetOptionEntry k) maybeValue
-  where 
+  where
     maybeValue = do
           m <- readMVar options
           pure $ decodeFromStr =<< Map.lookup (encodeToStr k) m
@@ -144,7 +144,7 @@ interpretFlowF rt (RunSysCmd cmd next) = do
 
 interpretFlowF rt (Fork desc flowGUID flow next) = do
   mbForkedRt <- forkBackendRuntime flowGUID rt
-  void $ withRunMode (runMode rt) (mkForkFlowEntry desc flowGUID) 
+  void $ withRunMode (runMode rt) (mkForkFlowEntry desc flowGUID)
     (case mbForkedRt of
       Nothing -> putStrLn (flowGUID <> " Failed to fork flow.") *> pure ()
       Just forkedBrt -> forkF forkedBrt flow *> pure ())

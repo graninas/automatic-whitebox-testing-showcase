@@ -260,7 +260,7 @@ This is an operational data that exists only on the runtime layer, and it should
 
 ```haskell
 data RecorderRuntime = RecorderRuntime
-  { recordingRef :: IORef RecordingEntries
+  { recordingRef :: MVar RecordingEntries
   }
 ```
 
@@ -269,8 +269,8 @@ For the player mode, we’ll put the recordings and the current step into the Pl
 ```haskell
 data PlayerRuntime = PlayerRuntime
   { recording :: RecordingEntries
-  , stepRef :: IORef Int
-  , errorRef :: IORef (Maybe PlaybackError)
+  , stepRef :: MVar Int
+  , errorRef :: MVar PlaybackError
   }
 ```
 
