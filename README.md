@@ -455,7 +455,7 @@ getStudentsCount dbName cfg = do
   pure count
 ```
 
-Here, a connection type is used twice, and there is no any limitations to pass it across the scenarios. This type is an abstraction over the native one:
+Here, the conn value is used twice, and there is no any limitations to pass it across the scenarios. It's type is an abstraction over the native one:
 
 ```haskell
 data Connection
@@ -463,20 +463,20 @@ data Connection
   | MockedConn DBName
 ```
 
-It’s also serializable in sense the corresponding entry will keep some useful info about it, namely, a `DBName`:
+It’s also serializable in sense the corresponding entry will keep some useful info about it, namely, DB name:
 
 ```haskell
 data ConnectEntry = ConnectEntry
   { ceDBConfig :: DB.Config
-  , ceDBName :: String
+  , ceDBName :: DBName
   }
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
-mkConnectEntry :: String -> DB.Config -> Connection -> ConnectEntry
+mkConnectEntry :: DBName -> DB.Config -> Connection -> ConnectEntry
 mkConnectEntry dbName dbCfg _ = ConnectEntry dbCfg dbName
 ```
 
-So that in the recording and normal mode the `Connection` variable will contain `NativeConn`, and `MockedConn` in the replay mode. The corresponding recordings might look like this:
+So that in the recording and normal mode the `conn` variable will contain `NativeConn`, and `MockedConn` in the replay mode. The corresponding recordings might look like this:
 
 ```json
 {
