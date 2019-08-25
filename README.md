@@ -565,7 +565,7 @@ This is how we abstract over the native DB facilities, - this “pattern” can 
 
 ### Presto Backend possibilities and PureScript differences
 
-In the [Presto.Backend](https://github.com/juspay/purescript-presto-backend/tree/feature/record-replay) framework (by [Juspay](http://juspay.in)), we’ve developed a powerful technology for automated regression testing. The showcase project is mostly a less-featured port from the PureScript code, so if you are interested to know more, you can check Presto.Backend. It supports such features as configs, async flows handling, KV DB and SQL DB interaction and many others. Here goes a short overview of its possibilities related to recording-replaying mechanism.
+In the [Presto.Backend](https://github.com/juspay/purescript-presto-backend/tree/feature/record-replay) framework (by [Juspay](http://juspay.in)), we’ve developed a powerful technology for automated regression testing. This particular showcase project is mostly a less-featured port from the PureScript code, so if you are interested to know more, you can check Presto.Backend. It supports such features as configs, async flows handling, KV DB and SQL DB interaction and many others. Here goes a short overview of its possibilities related to recording-replaying mechanism.
 
 Different configs can be used for a fine tuning of the recording-replaying process.
 
