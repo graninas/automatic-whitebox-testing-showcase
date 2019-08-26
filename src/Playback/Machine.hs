@@ -59,7 +59,7 @@ itemMismatch flowStep recordingEntry
 setReplayingError :: PlayerRuntime -> PlaybackError -> IO a
 setReplayingError playerRt err = do
   void $ takeMVar $ errorMVar playerRt
-  putMVar (errorMVar playerRt) err
+  putMVar (errorMVar playerRt) (Just err)
   throwIO $ ReplayingException err
 
 pushRecordingEntry

@@ -48,7 +48,7 @@ forkPlayerRt :: String -> PlayerRuntime -> IO (Maybe PlayerRuntime)
 forkPlayerRt newFlowGUID PlayerRuntime{..} =
   case Map.lookup newFlowGUID forkedFlowRecordings of
     Nothing -> do
-      let missedRecsErr = PlaybackError
+      let missedRecsErr = Just $ PlaybackError
             { errorType    = ForkedFlowRecordingsMissed
             , errorMessage = "No recordings found for forked flow: " <> newFlowGUID
             }
@@ -75,6 +75,7 @@ forkRecorderRt newFlowGUID RecorderRuntime{..} = do
   putMVar forkedRecordingsVar forkedRecs'
   pure RecorderRuntime
     { flowGUID = newFlowGUID
+    , recordingMVar = recordingVar
     , ..
     }
 
