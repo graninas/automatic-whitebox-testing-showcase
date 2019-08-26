@@ -83,14 +83,14 @@ data RecorderRuntime = RecorderRuntime
 data PlayerRuntime = PlayerRuntime
   { recording            :: RecordingEntries
   , stepMVar             :: MVar Int
-  , errorMVar            :: MVar PlaybackError
+  , errorMVar            :: MVar (Maybe PlaybackError)
   , disableVerify        :: [String]
   , disableMocking       :: [String]
   , skipEntries          :: [String]
   , entriesFiltered      :: Bool
   , flowGUID             :: String
   , forkedFlowRecordings :: Map String RecordingEntries
-  , forkedFlowErrorsVar  :: MVar (Map String PlaybackError)
+  , forkedFlowErrorsVar  :: MVar (Map String (Maybe PlaybackError))
   }
 
 
