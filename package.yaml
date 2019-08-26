@@ -24,7 +24,6 @@ dependencies:
 - free
 - uuid
 - aeson
-- hspec
 - text
 - bytestring
 - containers
