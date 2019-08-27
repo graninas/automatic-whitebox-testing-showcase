@@ -325,7 +325,7 @@ data PlaybackError = PlaybackError
   }
 ```
 
-The error message (and the diff between the previous and the current flows) is usually enough to understand what happened. There will be a step index, an entry and the current `FlowF` method description. On a closer look however it’s not so obvious how the player obtains this info. Let’s elaborate that.
+The error message (and the diff between the previous and the current flows) is usually enough to understand what's happened. There will be a step index, an entry and the current `FlowF` method description. On a closer look however it’s not so obvious how the player obtains this info. Let’s elaborate that.
 
 When the interpreter hits a particular method, the latter contains all the information about the step. For example, the `LogInfo` method carries the message string, the `RunIO` method has a return type defined and so on. The replaying mechanism should be able to decode mocks, to prepare an entry for serialization, to check the input parameters of the method (if there are such parameters). We’re passing this information into the mechanism by associating it with the corresponding entry using the two type classes. First of them, `RRItem`, allows to serialize and deserialize the entry:
 
@@ -398,7 +398,7 @@ withRunMode (ReplayingMode playerRt) mkRRItem act
   = replay playerRt mkRRItem act
 ```
 
-Going deeper to the implementation seems not that necessary for this storytelling. The `record` and `replay` functions store and load entries, decode results, make checks and verifications. A more developed mechanism also supports configs for replaying and recording. You can see how it’s [done](https://github.com/graninas/automatic-whitebox-testing-showcase/blob/master/src/Playback/Machine.hs) in the showcase project, and now we’d better cover an important question we mentioned earlier. Let’s return to the design space and talk about why we have to abstract native types and libraries for this mechanism particularly and in general.
+Going deeper to the implementation seems not that necessary for this storytelling. The `record` and `replay` functions store and load entries, decode results, make checks and verifications. A more developed mechanism also supports configs for replaying and recording. You can see how it’s done in the [showcase project](https://github.com/graninas/automatic-whitebox-testing-showcase/blob/master/src/Playback/Machine.hs), and now we’d better cover an important question we mentioned earlier. Let’s return to the design space and talk about why we have to abstract native types and libraries for this mechanism particularly and in general.
 
 ### Abstracting over the native libraries and types
 
