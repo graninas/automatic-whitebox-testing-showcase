@@ -182,7 +182,7 @@ initDB dbName cfg = do
   pure mbConn
 ```
 
-Our `RunIO` step cannot be recorded, so it will be absent in the recording. But when the player hits this `runIO` call, it will have to run a real effect, which is not what should happen. This effectively means the usage of bare types is not allowed because all the steps should be written into the recording. How we can solve this problem? To make scenarios recordable and replayable we have to abstract all the bare types by our own mockable and serializable types. We’ll see how to do with DB connections in the next part of the article, and for now we’ll just proceed with a tiny change in the language. We’ll constrain the `RunIO` method by the `ToJSON / FromJSON` instances from the `aeson` package for the type `a`:
+Our `RunIO` step cannot be recorded, so it will be absent in the recording. But when the player hits this `runIO` call, it will have to run a real effect, which is not what should happen. This effectively means the usage of bare types is not allowed because all the steps should be written into the recording. How we can solve this problem? To make scenarios recordable and replayable we have to abstract all the bare types by our own mockable and serializable types. We’ll see how to do it with DB connections in the next part of the article, and for now we’ll just proceed with a tiny change in the language. We’ll constrain the `RunIO` method by the `ToJSON / FromJSON` instances from the `aeson` package for the type `a`:
 
 ```haskell
 data FlowF next where
