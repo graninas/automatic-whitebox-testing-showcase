@@ -505,7 +505,7 @@ So that in the recording and normal mode the `conn` variable will contain `Nativ
 }
 ```
 
-As you can see the recordings do not contain the connection itself, just a help info about it. When replaying, there should be a code in the interpreter that is able to distinguish the two variants of connection. But before we’ll have a loot at it, let’s figure out the design of the DB <-> Flow interaction that is used for the scenario above. This design utilizes a small but important idea of a clear separation between DB queries evaluation and DB connectivity management.
+As you can see the recordings do not contain the connection itself, just a help info about it. When replaying, there should be a code in the interpreter that is able to distinguish the two variants of connection. But before we get familiar with it, let’s figure out the design of the DB <-> Flow interaction that is used for the scenario above. This design utilizes a small but important idea of a clear separation between DB queries evaluation and DB connectivity management.
 
 ```haskell
 type Description = String
