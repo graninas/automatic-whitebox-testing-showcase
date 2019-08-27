@@ -270,7 +270,7 @@ For the player mode, we’ll put the recordings and the current step into the Pl
 data PlayerRuntime = PlayerRuntime
   { recording :: RecordingEntries
   , stepRef :: MVar Int
-  , errorRef :: MVar PlaybackError
+  , errorRef :: MVar (Maybe PlaybackError)
   }
 ```
 
