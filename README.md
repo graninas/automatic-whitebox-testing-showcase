@@ -612,7 +612,7 @@ generateGUID description = wrap $ GenerateGUID
     id
 ```
 
-But... This is fine and not a problem. We wrote this code once during the framework improvement, and we won’t touch it anymore. The business logic hasn't changed at all (except replacing the native types by their abstracted analogues), and it’s now completely recordable and replayable. Which is more important than any possible boilerplate on the implementation level.
+But... This is fine and not a problem. We wrote this code once during the framework improvement, and we won’t touch it anymore. The business logic has not been changed at all (except replacing the native types by their abstracted analogues), and it’s now completely recordable and replayable. Which is more important than any possible boilerplate on the implementation level.
 
 ### Conclusion
 
