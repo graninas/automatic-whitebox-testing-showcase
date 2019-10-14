@@ -1,10 +1,10 @@
 name:                RR
 version:             0.1.0.0
-github:              "githubuser/RR"
+github:              "graninas/automatic-whitebox-testing-showcase"
 license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2019 Author name here"
+author:              "Alexander Granin"
+maintainer:          "graninas@gmail.com"
+copyright:           "2019 Alexander Granin"
 
 extra-source-files:
 - README.md
