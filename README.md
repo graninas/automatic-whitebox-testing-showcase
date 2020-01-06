@@ -12,8 +12,6 @@ Building applications with complex business logic is rarely done without testing
 
 **Note.** This article is not an introduction into Free Monads. You can get additional information in my book ["Functional Design and Architecture"](https://github.com/graninas/Functional-Design-and-Architecture) or try another resources.
 
-**Note.** This showcase project is under development. More features will be added soon.
-
 ![Recording-Replaying](https://github.com/graninas/automatic-whitebox-testing-showcase/blob/master/Recording-Replaying.png)
 
 - [Integration tests](#integration-tests)
