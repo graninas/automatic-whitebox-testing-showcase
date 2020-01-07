@@ -72,28 +72,29 @@ main = hspec $ do
       rt <- initRegularRT
       res <- runFlow rt cmdScript
       res `shouldBe` "hello\n"
-    
+
     it "Recorder mode" $ do
       rt <- initRecorderRT
       res <- runFlow rt cmdScript
-      case (runMode rt) of
+      case runMode rt of
         RecordingMode rrt -> do
-          recs <- readMVar (recordingMVar rrt)
-          (V.length recs) `shouldBe` 6
+          recs <- readMVar $ recordingMVar rrt
+          V.length recs `shouldBe` 6
           res `shouldBe` "hello\n"
         _ -> fail "wrong mode"
 
     it "Player mode" $ do
       rt <- initRecorderRT
       res <- runFlow rt cmdScript
-      case (runMode rt) of
+      case runMode rt of
         RecordingMode rrt -> do
-          entries <- readMVar (recordingMVar rrt)
+          entries <- readMVar $ recordingMVar rrt
           pRt <- initPlayerRT entries
           res2 <- runFlow pRt cmdScript
           res `shouldBe` res2
-          case (runMode pRt) of
+          case runMode pRt of
             ReplayingMode prtm -> do
-              errors <- readMVar (errorMVar prtm)
+              errors <- readMVar $ errorMVar prtm
               errors `shouldBe` Nothing
+            _ -> fail "wrong mode"
         _ -> fail "wrong mode"
