@@ -169,8 +169,6 @@ instance RRItem LogInfoEntry where
 instance MockedResult LogInfoEntry () where
   getMock _ = Just ()
 
-
-
 instance RRItem ConnectEntry where
   toRecordingEntry rrItem idx mode = RecordingEntry idx mode "ConnectEntry" $ encodeToStr rrItem
   fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload

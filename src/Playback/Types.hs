@@ -35,14 +35,15 @@ data RecordingEntry = RecordingEntry EntryIndex EntryReplayingMode EntryName Ent
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
 type RecordingEntries = Vector RecordingEntry
-newtype Recording = Recording RecordingEntries
+newtype Recording = Recording
+  { entries :: RecordingEntries
+  }
+  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
 data GlobalReplayingMode = GlobalNormal | GlobalNoVerify | GlobalNoMocking | GlobalSkip
 
 data EntryReplayingMode = Normal | NoVerify | NoMock
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
-
-
 
 class (Eq rrItem, ToJSON rrItem, FromJSON rrItem)
   => RRItem rrItem where
