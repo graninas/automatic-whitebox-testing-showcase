@@ -8,6 +8,8 @@ import qualified Data.Map.Strict as Map
 import qualified Data.Vector as V
 import Data.Aeson (decode, encode)
 import Test.Hspec
+import           Data.UUID             (toString)
+import           Data.UUID.V4          (nextRandom)
 
 import Playback.Types
 import Runtime.Types
@@ -70,38 +72,8 @@ cmdScript2 = do
   logInfo $ "Generated guid from 2-nd script is: " ++ guid
   runSysCmd "echo hello from 2-nd script"
 
-
-compareGUIDs :: String -> Flow ()
-compareGUIDs fileName = do
-  newGuid <- generateGUID
-  oldGuid <- L.runIO $ readFile fileName
-
-  let equal = newGuid == oldGuid
-  when equal $ logInfo "GUIDs are equal."
-  unless equal $ logInfo "GUIDs are not equal."
-
 main :: IO ()
 main = hspec $ do
-  describe "Recordings tests" $ do
-    it "Compare guids" $ do
-      rt <- initRecorderRT
-      runFlow rt $ compareGUIDs "test/guid.txt"
-      case runMode rt of
-        RecordingMode rrt -> do
-          entries <- readMVar $ recordingMVar rrt
-          length entries `shouldBe` 3
-
-          pRt <- initPlayerRT entries
-          runFlow pRt $ compareGUIDs "test/guid.txt"
-          case runMode pRt of
-            ReplayingMode prtm -> do
-              errors <- readMVar $ errorMVar prtm
-              errors `shouldBe` Nothing
-              -- let jsonRec = encode $ Recording entries
-              -- jsonRec `shouldBe` "{\"entries\":[[0,\"Normal\",\"GenerateGUIDEntry\",{\"guid\":\"3a93686e-9b1a-4f02-84fd-1354221b0a63\"}],[1,\"Normal\",\"RunIOEntry\",{\"jsonResult\":\"58ee4992-31f6-11ea-978f-2e728ce88125\\n\"}],[2,\"Normal\",\"LogInfoEntry\",{\"message\":\"GUIDs are not equal.\"}]]}"
-            _ -> fail "wrong mode"
-        _ -> fail "wrong mode"
-
 
   describe "Tests" $ do
     it "Regular mode" $ do

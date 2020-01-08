@@ -2,15 +2,15 @@
     "entries": [
       [
         0, "GenerateGUIDEntry",
-        "{\"contents\":{\"guid\":\"662ed4a1-950b-48cd-a91d-1091342070d9\"},\"tag\":\"GenerateGUIDEntry\"}"
+        {\"contents\":{\"guid\":\"662ed4a1-950b-48cd-a91d-1091342070d9\"},\"tag\":\"GenerateGUIDEntry\"}
       ],
       [
         1, "RunIOEntry",
-        "{\"contents\":{\"jsonResult\":\"662ed4a1-950b-48cd-a91d-1091342070d9\"},\"tag\":\"RunIOEntry\"}"
+        {\"contents\":{\"jsonResult\":\"662ed4a1-950b-48cd-a91d-1091342070d9\"},\"tag\":\"RunIOEntry\"}
       ],
       [
         2, "LogInfoEntry",
-        "{\"contents\":{\"message\":\"GUIDs are equal.\"},\"tag\":\"LogInfoEntry\"}"
+        {\"contents\":{\"message\":\"GUIDs are equal.\"},\"tag\":\"LogInfoEntry\"}
       ]
     ]
 }
@@ -19,22 +19,20 @@
     "entries": [
       [
         0, "RunDBQueryEntry",
-        "{\"contents\":{\"jsonResult\":\"[]\", \"query\":\"SELECT * FROM students\"}}"
+        {\"contents\":{\"jsonResult\":\"[]\", \"query\":\"SELECT * FROM students\"}}
       ],
       [
         1, "LogInfoEntry",
-        "{\"contents\":{\"message\":\"No records found.\"}}"
+        {\"contents\":{\"message\":\"No records found.\"}}
       ]
     ]
 }
-
-
 
 {
     "entries": [
       [
         0, "RunIOEntry",
-        "{\"contents\":{\"jsonResult\":\"[]\"}}"
+        {\"contents\":{\"jsonResult\":\"[]\"}}
       ]
     ]
 }

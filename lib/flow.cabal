@@ -1,0 +1,71 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 38c6bb53c25a22bd5281ed7ac121e3f94c72433f1f374a205edf83073311b649
+
+name:           flow
+version:        0.1.0.0
+homepage:       https://github.com/graninas/automatic-whitebox-testing-showcase#readme
+bug-reports:    https://github.com/graninas/automatic-whitebox-testing-showcase/issues
+author:         Alexander Granin
+maintainer:     graninas@gmail.com
+copyright:      2019 Alexander Granin
+license:        BSD3
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/graninas/automatic-whitebox-testing-showcase
+
+library
+  exposed-modules:
+      DB.Native
+      Language
+      Playback.Entries
+      Playback.Machine
+      Playback.Types
+      Runtime.Interpreter
+      Runtime.Options
+      Runtime.SystemCommands
+      Runtime.Types
+      Types
+  other-modules:
+      Paths_flow
+  hs-source-dirs:
+      flow
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , free
+    , process
+    , text
+    , uuid
+    , vector
+  default-language: Haskell2010
+
+test-suite flow-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_flow
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , flow
+    , free
+    , hspec
+    , process
+    , text
+    , uuid
+    , vector
+  default-language: Haskell2010

@@ -1,15 +1,10 @@
-name:                RR
+name:                app
 version:             0.1.0.0
 github:              "graninas/automatic-whitebox-testing-showcase"
 license:             BSD3
 author:              "Alexander Granin"
 maintainer:          "graninas@gmail.com"
 copyright:           "2019 Alexander Granin"
-
-extra-source-files:
-- README.md
-
-description:         Please see the README on GitHub at <https://github.com/githubuser/RR#readme>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -21,23 +16,27 @@ dependencies:
 - containers
 - vector
 - process
+- flow
 
 library:
-  source-dirs: src
+  source-dirs:
+    - src
 
 executables:
-  RR-exe:
+  app:
     main:                Main.hs
-    source-dirs:         app
+    source-dirs:         src/
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    dependencies:
-    - RR
+    - -Wall
+    - -O2
+    - -fspec-constr-recursive=10
+    - -fno-ignore-asserts
 
 tests:
-  RR-test:
+  app-test:
     main:                Spec.hs
     source-dirs:         test
     ghc-options:
@@ -45,5 +44,6 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - RR
+    - flow
+    - app
     - hspec

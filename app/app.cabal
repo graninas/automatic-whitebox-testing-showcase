@@ -1,0 +1,86 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 286701b024fd0e6f300bf00962b87f844b9f697709da9008b3368e4f1fcfaaaf
+
+name:           app
+version:        0.1.0.0
+homepage:       https://github.com/graninas/automatic-whitebox-testing-showcase#readme
+bug-reports:    https://github.com/graninas/automatic-whitebox-testing-showcase/issues
+author:         Alexander Granin
+maintainer:     graninas@gmail.com
+copyright:      2019 Alexander Granin
+license:        BSD3
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/graninas/automatic-whitebox-testing-showcase
+
+library
+  exposed-modules:
+      Main
+      Scenarios
+  other-modules:
+      Paths_app
+  hs-source-dirs:
+      src
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , flow
+    , free
+    , process
+    , text
+    , uuid
+    , vector
+  default-language: Haskell2010
+
+executable app
+  main-is: Main.hs
+  other-modules:
+      Scenarios
+      Paths_app
+  hs-source-dirs:
+      src/
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -O2 -fspec-constr-recursive=10 -fno-ignore-asserts
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , flow
+    , free
+    , process
+    , text
+    , uuid
+    , vector
+  default-language: Haskell2010
+
+test-suite app-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_app
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      aeson
+    , app
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , flow
+    , free
+    , hspec
+    , process
+    , text
+    , uuid
+    , vector
+  default-language: Haskell2010
