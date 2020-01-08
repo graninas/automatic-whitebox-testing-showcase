@@ -1,0 +1,15 @@
+{
+   "precision":"P4",
+   "expression":{
+      "op":"Mul",
+      "tag":"BinOpExpr",
+      "arg1":{
+         "tag":"ValExpr",
+         "contents":10
+      },
+      "arg2":{
+         "tag":"ValExpr",
+         "contents":2
+      }
+   }
+}

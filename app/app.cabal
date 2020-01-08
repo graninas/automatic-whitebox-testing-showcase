@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 286701b024fd0e6f300bf00962b87f844b9f697709da9008b3368e4f1fcfaaaf
+-- hash: f2bc4d14b33b9c2ebadc4164c146ff3c6b7bbd62448eab6722d3f28ef0ba6ad7
 
 name:           app
 version:        0.1.0.0
@@ -22,6 +22,9 @@ source-repository head
 
 library
   exposed-modules:
+      Expression.Expr
+      Expression.Flow
+      Expression.IO
       Main
       Scenarios
   other-modules:
@@ -44,6 +47,9 @@ library
 executable app
   main-is: Main.hs
   other-modules:
+      Expression.Expr
+      Expression.Flow
+      Expression.IO
       Scenarios
       Paths_app
   hs-source-dirs:
