@@ -23,22 +23,22 @@ import           Data.Map.Strict    (Map)
 import qualified Data.Map.Strict as Map
 import qualified Data.IntMap as MArr
 import           Data.UUID.V4       (nextRandom)
-import           Data.Aeson         (ToJSON, FromJSON, encode, decode)
+import           Data.Aeson         (ToJSON, FromJSON, Value, Result(..), encode, decode, toJSON, fromJSON, parseJSON)
 import           Data.Proxy         (Proxy(..))
 import           Data.Text          (Text)
 import           GHC.Generics       (Generic)
 
 type EntryIndex = Int
 type EntryName = String
-type EntryPayload = String
+type EntryPayload = Value
 data RecordingEntry = RecordingEntry EntryIndex EntryReplayingMode EntryName EntryPayload
-  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 type RecordingEntries = Vector RecordingEntry
 newtype Recording = Recording
   { entries :: RecordingEntries
   }
-  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 data GlobalReplayingMode = GlobalNormal | GlobalNoVerify | GlobalNoMocking | GlobalSkip
 
@@ -100,6 +100,16 @@ encodeToStr = BS.unpack . BSL.toStrict . encode
 
 decodeFromStr :: FromJSON a => String -> Maybe a
 decodeFromStr = decode . BSL.fromStrict . BS.pack
+
+encodeToValue :: ToJSON a => a -> Value
+encodeToValue = toJSON
+
+decodeFromValue :: FromJSON a => Value -> Maybe a
+decodeFromValue val = case fromJSON val of
+  Error _ -> Nothing   -- TODO
+  Success a -> Just a
+
+
 
 note :: forall a b. a -> Maybe b -> Either a b
 note a Nothing = Left a

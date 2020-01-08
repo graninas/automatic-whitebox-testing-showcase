@@ -12,7 +12,7 @@ module Playback.Entries where
 
 import           Control.Monad         (unless, void, when)
 import           Control.Monad.Free
-import           Data.Aeson            (FromJSON, ToJSON, decode, encode)
+import           Data.Aeson            (FromJSON, ToJSON, Value, decode, encode, toJSON, parseJSON)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy  as BSL
 import qualified Data.IntMap           as MArr
@@ -29,28 +29,28 @@ import           Types
 import           Runtime.Options
 
 data SetOptionEntry = SetOptionEntry
-  { key   :: String
-  , value :: String
+  { key   :: Value
+  , value :: Value
   }
-  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 mkSetOptionEntry :: OptionEntity k v => k -> v -> () -> SetOptionEntry
-mkSetOptionEntry k v _ = SetOptionEntry (encodeToStr k) (encodeToStr v)
+mkSetOptionEntry k v _ = SetOptionEntry (encodeToValue k) (encodeToValue v)
 
 data GetOptionEntry = GetOptionEntry
-  { key   :: String
-  , value :: String
+  { key   :: Value
+  , value :: Value
   }
-  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 mkGetOptionEntry :: OptionEntity k v => k -> Maybe v -> GetOptionEntry
-mkGetOptionEntry k mv = GetOptionEntry (encodeToStr k) (encodeToStr mv)
+mkGetOptionEntry k mv = GetOptionEntry (encodeToValue k) (encodeToValue mv)
 
 data RunSysCmdEntry = RunSysCmdEntry
   { cmd    :: String
   , result :: String
   }
-  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 mkRunSysCmdEntry :: String -> String -> RunSysCmdEntry
 mkRunSysCmdEntry cmd result = RunSysCmdEntry cmd result
@@ -59,7 +59,7 @@ data ForkFlowEntry = ForkFlowEntry
   { description :: String
   , guid        :: String
   }
-  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 mkForkFlowEntry :: String -> String -> () -> ForkFlowEntry
 mkForkFlowEntry desc guid _ = ForkFlowEntry desc guid
@@ -67,23 +67,23 @@ mkForkFlowEntry desc guid _ = ForkFlowEntry desc guid
 data GenerateGUIDEntry = GenerateGUIDEntry
   { guid :: String
   }
-  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 mkGenerateGUIDEntry :: String -> GenerateGUIDEntry
 mkGenerateGUIDEntry = GenerateGUIDEntry
 
 data RunIOEntry = RunIOEntry
-  { jsonResult :: String
+  { jsonResult :: Value
   }
-  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 mkRunIOEntry :: ToJSON a => a -> RunIOEntry
-mkRunIOEntry = RunIOEntry . encodeToStr
+mkRunIOEntry = RunIOEntry . encodeToValue
 
 data LogInfoEntry = LogInfoEntry
   { message :: String
   }
-  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 mkLogInfoEntry :: String -> () -> LogInfoEntry
 mkLogInfoEntry msg _ = LogInfoEntry msg
@@ -92,7 +92,7 @@ data ConnectEntry = ConnectEntry
   { ceDBConfig :: DB.Config
   , ceDBName :: String
   }
-  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 mkConnectEntry :: String -> DB.Config -> Connection -> ConnectEntry
 mkConnectEntry dbName dbCfg _ = ConnectEntry dbCfg dbName
@@ -100,9 +100,9 @@ mkConnectEntry dbName dbCfg _ = ConnectEntry dbCfg dbName
 data RunDBEntry = RunDBEntry
   { dbeDBName :: String
   , dbeDescription :: String
-  , dbeJsonResult :: String
+  , dbeJsonResult :: Value
   }
-  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+  deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
 mkRunDBEntry
   :: ToJSON a
@@ -110,77 +110,77 @@ mkRunDBEntry
   -> String
   -> a
   -> RunDBEntry
-mkRunDBEntry (NativeConn dbName _) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToStr dbRes
-mkRunDBEntry (MockedConn dbName) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToStr dbRes
+mkRunDBEntry (NativeConn dbName _) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToValue dbRes
+mkRunDBEntry (MockedConn dbName) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToValue dbRes
 
 instance RRItem GetOptionEntry where
-  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "GetOptionEntry" $ encodeToStr rrItem
-  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "GetOptionEntry" $ encodeToValue rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromValue payload
   getTag _ = "GetOptionEntry"
 
 instance FromJSON v => MockedResult GetOptionEntry v where
-  getMock GetOptionEntry{..} = decodeFromStr value
+  getMock GetOptionEntry{..} = decodeFromValue value
 
 instance RRItem SetOptionEntry where
-  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "SetOptionEntry" $ encodeToStr rrItem
-  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "SetOptionEntry" $ encodeToValue rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromValue payload
   getTag _ = "SetOptionEntry"
 
 instance MockedResult SetOptionEntry () where
   getMock _ = Just ()
 
 instance RRItem RunSysCmdEntry where
-  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "RunSysCmdEntry" $ encodeToStr rrItem
-  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "RunSysCmdEntry" $ encodeToValue rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromValue payload
   getTag _ = "RunSysCmdEntry"
 
 instance MockedResult RunSysCmdEntry String where
   getMock RunSysCmdEntry {..} = Just result
 
 instance RRItem ForkFlowEntry where
-  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "ForkFlowEntry" $ encodeToStr  rrItem
-  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "ForkFlowEntry" $ encodeToValue  rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromValue payload
   getTag _ = "ForkFlowEntry"
 
 instance MockedResult ForkFlowEntry () where
   getMock _ = Just ()
 
 instance RRItem GenerateGUIDEntry where
-  toRecordingEntry rrItem idx mode  = RecordingEntry idx mode "GenerateGUIDEntry" $ encodeToStr rrItem
-  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
+  toRecordingEntry rrItem idx mode  = RecordingEntry idx mode "GenerateGUIDEntry" $ encodeToValue rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromValue payload
   getTag _ = "GenerateGUIDEntry"
 
 instance MockedResult GenerateGUIDEntry String where
   getMock (GenerateGUIDEntry g) = Just g
 
 instance RRItem RunIOEntry where
-  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "RunIOEntry" $ encodeToStr rrItem
-  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "RunIOEntry" $ encodeToValue rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromValue payload
   getTag _ = "RunIOEntry"
 
 instance FromJSON a => MockedResult RunIOEntry a where
-  getMock (RunIOEntry r) = decodeFromStr r
+  getMock (RunIOEntry r) = decodeFromValue r
 
 instance RRItem LogInfoEntry where
-  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "LogInfoEntry" $ encodeToStr rrItem
-  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "LogInfoEntry" $ encodeToValue rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromValue payload
   getTag _ = "LogInfoEntry"
 
 instance MockedResult LogInfoEntry () where
   getMock _ = Just ()
 
 instance RRItem ConnectEntry where
-  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "ConnectEntry" $ encodeToStr rrItem
-  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "ConnectEntry" $ encodeToValue rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromValue payload
   getTag _ = "ConnectEntry"
 
 instance MockedResult ConnectEntry Connection where
   getMock (ConnectEntry _ dbName) = Just $ MockedConn dbName
 
 instance RRItem RunDBEntry where
-  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "RunDBEntry" $ encodeToStr rrItem
-  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromStr payload
+  toRecordingEntry rrItem idx mode = RecordingEntry idx mode "RunDBEntry" $ encodeToValue rrItem
+  fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromValue payload
   getTag _ = "RunDBEntry"
 
 instance FromJSON a => MockedResult RunDBEntry a where
-  getMock (RunDBEntry _ _ r) = decodeFromStr r
+  getMock (RunDBEntry _ _ r) = decodeFromValue r
