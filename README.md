@@ -59,11 +59,11 @@ getStudentsCount = do
     "entries": [
       [
         0, "RunDBQueryEntry",
-        "{\"contents\":{\"jsonResult\":\"[]\", \"query\":\"SELECT * FROM students\"}}"
+        {"jsonResult":[], "query":"SELECT * FROM students"}
       ],
       [
         1, "LogInfoEntry",
-        "{\"contents\":{\"message\":\"No records found.\"}}"
+        {"message":"No records found."}
       ]
     ]
 }
@@ -87,7 +87,7 @@ getStudentsCount = do
 $ player "recording.json"
 
 [FAIL] Playback failed: unexpected flow end. Expected:
-{ 0, "RunDBQueryEntry", "{\"jsonResult\":\"[]\",\"contents\": {\"query\": \"SELECT * FROM students\"}}"
+{0, "RunDBQueryEntry", {"jsonResult":[],"query":"SELECT * FROM students"}}
 ```
 
 Notably, full mocking of the effects in the recordings is not the only thing we can do. More interesting use cases of automatic white-box testing emerge if we allow the playback to be configured in several ways.
@@ -211,7 +211,7 @@ In the recording-replaying mechanism, all the `Flow` methods should be accompani
 data GenerateGUIDEntry = GenerateGUIDEntry { guid :: String }
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
-data RunIOEntry = RunIOEntry { jsonResult :: String }
+data RunIOEntry = RunIOEntry { jsonResult :: Value }
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
 data LogInfoEntry = LogInfoEntry { message :: String }
@@ -222,7 +222,7 @@ mkGenerateGUIDEntry :: String -> GenerateGUIDEntry
 mkGenerateGUIDEntry guidStr = GenerateGUIDEntry guidStr
 
 mkRunIOEntry :: ToJSON ioResult => ioResult -> RunIOEntry
-mkRunIOEntry = RunIOEntry . encodeToStr
+mkRunIOEntry = RunIOEntry . encodeToValue
 
 mkLogInfoEntry :: String -> () -> LogInfoEntry
 mkLogInfoEntry msg _ = LogInfoEntry msg
@@ -235,7 +235,7 @@ Technically, it’s seems clear how the recording mode should work: on every ste
 ```haskell
 data RecordingEntry
   = GenerateGUIDEntry { guid :: String }
-  | RunIOEntry { jsonResult :: String }
+  | RunIOEntry { jsonResult :: Value }
   | LogInfoEntry { message :: String }
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 ```
@@ -245,13 +245,13 @@ This is fine, but let’s make our lives harder. We’ll just encode an entry ty
 ```haskell
 type EntryIndex = Int
 type EntryName = String
-type EntryPayload = String
+type EntryPayload = Value
 
 data RecordingEntry = RecordingEntry EntryIndex EntryName EntryPayload
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
 type RecordingEntries = IntMap RecordingEntry
-newtype Recording = Recording RecordingEntries
+newtype Recording = Recording { entries :: RecordingEntries }
 ```
 
 This is an operational data that exists only on the runtime layer, and it should not anyhow appear on the business logic layer. So we want to maintain a structure for runtime and interpreting process:
@@ -429,12 +429,18 @@ Now, the flow will be recorded as follows:
 {
     "entries": [
       [
-        0, "RunIOEntry",
-        "{\"contents\":{\"jsonResult\":\"[]\"}}"
+        0,
+        "RunIOEntry",
+        {
+          "jsonResult":[]
+        }
       ],
       [
-        1, "LogInfoEntry",
-        "{\"contents\":{\"message\":\"No records found.\"}}"
+        1,
+        "LogInfoEntry",
+        {
+          "message":"No records found."
+        }
       ]
     ]
 }
@@ -480,24 +486,37 @@ So that in the recording and normal mode the `conn` variable will contain `Nativ
 {
     "entries": [
       [
-        0, "ConnectEntry",
-        "{\"contents\":{\"ceDBConfig\":\"[]\", \"ceDBName\":\"students\"}}"
+        0,
+        "ConnectEntry",
+        {
+          "ceDBConfig":[],
+          "ceDBName":"students"
+        }
       ],
       [
-        1, "RunDBEntry",
-        "{\"contents\":{\"dbeDescription\":\"SELECT * FROM students\",
-        \"dbeJsonResult\":\"[]\",
-        \"dbeDBName\":\"students\"}}"
+        1,
+        "RunDBEntry",
+        {
+          "dbeDescription":"SELECT * FROM students",
+          "dbeJsonResult":[],
+          "dbeDBName":"students"
+        }
       ],
       [
-        2, "RunDBEntry",
-        "{\"contents\":{\"dbeDescription\":\"SELECT * FROM students WHERE disabled=1\",
-        \"dbeJsonResult\":\"[]\",
-        \"dbeDBName\":\"students\"}}"
+        2,
+        "RunDBEntry",
+        {
+          "dbeDescription":"SELECT * FROM students WHERE disabled=1",
+          "dbeJsonResult":[],
+          "dbeDBName":"students"
+          }
       ],
       [
-        3, "LogInfoEntry",
-        "{\"contents\":{\"message\":\"No records found.\"}}"
+        3,
+        "LogInfoEntry",
+        {
+          "message":"No records found."
+        }
       ]
     ]
 }
