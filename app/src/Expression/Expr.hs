@@ -48,7 +48,7 @@ isZero p v = abs v <= precVal p
 
 valsEqual :: Val -> Val -> Bool
 valsEqual (Val p1 v1) (Val p2 v2)
-  | p1 > p2   = abs (v1 - v2) <= precVal p1
+  | precVal p1 > precVal p2   = abs (v1 - v2) <= precVal p1
   | otherwise = abs (v1 - v2) <= precVal p2
 
 evalBinOp :: Precision -> BinOp -> Double -> Double -> Either String Double
