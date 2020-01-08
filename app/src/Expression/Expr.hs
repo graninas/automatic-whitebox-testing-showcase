@@ -3,7 +3,7 @@
 
 module Expression.Expr where
 
-import           Data.Aeson            (FromJSON, ToJSON, Result(), decode, encode, eitherDecode)
+import           Data.Aeson            (FromJSON, ToJSON)
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.ByteString.Lazy.Char8 as BCL
 import qualified Data.ByteString.Lazy  as BSL
@@ -23,11 +23,26 @@ data BinOp
   | Sub
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
+data UnOp
+  = Neg
+  | Sqr
+  | Sqrt
+  -- | Lg
+  -- | Ln
+  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+
 data Val = Val Precision Double
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
+data Const
+  = Pi
+  | E
+  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+
 data Expr
-  = BinOpExpr { op :: BinOp, arg1 :: Expr, arg2 :: Expr }
+  = BinOpExpr { bop :: BinOp, arg1 :: Expr, arg2 :: Expr }
+  | UnOpExpr { uop :: UnOp, arg :: Expr}
+  | ConstExpr Const
   | ValExpr Double
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
@@ -59,6 +74,17 @@ evalBinOp prec Div v1 v2
   | isZero prec v2 = Left "Zero division"
   | otherwise = Right $ v1 / v2
 
+evalUnOp :: Precision -> UnOp -> Double -> Either String Double
+evalUnOp prec Neg v = Right (0.0 - v)
+evalUnOp prec Sqr v = Right (v * v)
+evalUnOp prec Sqrt v
+  | v < 0.0 = Left "SQRT from a negative number"
+  | otherwise = Right $ sqrt v
+
+evalConst :: Precision -> Const -> Double
+evalConst _ Pi = pi
+evalConst _ E = exp 1
+
 eval :: PrecExpr -> Either String Val
 eval (PrecExpr prec expr) = do
   val <- eval' prec expr
@@ -69,6 +95,10 @@ eval' prec (BinOpExpr op arg1 arg2) = do
   r1 <- eval' prec arg1
   r2 <- eval' prec arg2
   evalBinOp prec op r1 r2
+eval' prec (UnOpExpr op arg) = do
+  r <- eval' prec arg
+  evalUnOp prec op r
+eval' prec (ConstExpr c) = Right $ evalConst prec c
 eval' prec (ValExpr v) = Right v
 
 demoExpr :: PrecExpr
@@ -76,4 +106,11 @@ demoExpr = PrecExpr P4
   ( BinOpExpr Mul
       (ValExpr 10.0)
       (ValExpr 2.0)
+  )
+
+circleAreaExpr :: Double -> PrecExpr
+circleAreaExpr radius = PrecExpr P4
+  ( BinOpExpr Mul
+      (ConstExpr Pi)
+      (UnOpExpr Sqr (ValExpr radius))
   )

@@ -1,0 +1,19 @@
+{
+   "precision":"P4",
+   "expression":{
+      "tag":"BinOpExpr",
+      "arg1":{
+         "tag":"ConstExpr",
+         "contents":"Pi"
+      },
+      "bop":"Mul",
+      "arg2":{
+         "tag":"UnOpExpr",
+         "arg":{
+            "tag":"ValExpr",
+            "contents":100
+         },
+         "uop":"Sqr"
+      }
+   }
+}

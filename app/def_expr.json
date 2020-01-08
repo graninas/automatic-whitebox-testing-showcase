@@ -1,7 +1,7 @@
 {
    "precision":"P4",
    "expression":{
-      "op":"Mul",
+      "bop":"Mul",
       "tag":"BinOpExpr",
       "arg1":{
          "tag":"ValExpr",

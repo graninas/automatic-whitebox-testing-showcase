@@ -35,3 +35,8 @@ main = do
     (Just v1, Just v2)
       | valsEqual v1 v2 -> putStrLn "Values are equal."
       | otherwise -> putStrLn "Values are not equal."
+
+  mbCircleArea <- R.runFlow rt $ FlowExpr.expressionScenario "app/circle_area.json"
+  case mbCircleArea of
+    Nothing   -> putStrLn "Failed to evaluate circle area."
+    Just area -> putStrLn $ "Circle area: " ++ show area
