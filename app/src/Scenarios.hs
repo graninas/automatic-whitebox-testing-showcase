@@ -7,6 +7,7 @@
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE TypeApplications          #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
+{-# LANGUAGE ViewPatterns              #-}
 
 module Scenarios where
 
@@ -18,12 +19,52 @@ import qualified Data.ByteString.Lazy  as BSL
 import           Data.Maybe            (isJust)
 import           Data.Proxy            (Proxy (..))
 import           Data.Text             (Text)
-import           Data.UUID             (toString)
+import           Data.UUID             (toString, fromString)
 import           Data.UUID.V4          (nextRandom)
 import           GHC.Generics          (Generic)
 
 import qualified DB.Native             as DB
 import           Language
+import qualified Language              as L
+
+loadOrGenerateGuidIO :: String -> IO String
+loadOrGenerateGuidIO fileName = do
+  mbGuid <- fromString <$> readFile fileName
+  case mbGuid of
+    Just (show -> guid) -> do
+      putStrLn $ "Guid loaded: " ++ guid
+      pure guid
+    Nothing -> do
+      newGuid <- toString <$> nextRandom
+      writeFile fileName newGuid
+      putStrLn $ "Guid generated: " ++ newGuid
+      pure newGuid
+
+queryAll      = "SELECT * FROM students"
+queryDisabled = "SELECT * FROM students WHERE disabled=1"
+
+getStudentsCountIO :: String -> DB.Config -> IO Int
+getStudentsCountIO dbName cfg = do
+  conn <- DB.connect dbName cfg
+  students <- DB.query @Students conn queryAll
+  disabled <- DB.query @Students conn queryDisabled
+
+  let count = length students - length disabled
+  when (count == 0) $ putStrLn "No records found."
+  pure count
+
+
+getStudentsCountFlow :: String -> DB.Config -> Flow Int
+getStudentsCountFlow dbName cfg = do
+  conn <- L.connect dbName cfg
+  students <- L.query @Students conn queryAll
+  disabled <- L.query @Students conn queryDisabled
+
+  let count = length students - length disabled
+  when (count == 0) $ L.logInfo "No records found."
+  pure count
+
+
 
 compareGUIDs :: String -> Flow ()
 compareGUIDs fileName = do
@@ -48,6 +89,8 @@ compareGUIDs fileName = do
 
 data Student = Student
   deriving (Generic, ToJSON, FromJSON)
+
+type Students = [Student]
 
 -- getStudentsCount :: String -> DB.Config -> Flow Int
 -- getStudentsCount dbName cfg = do
