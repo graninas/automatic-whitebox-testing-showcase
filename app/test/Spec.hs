@@ -20,6 +20,7 @@ import Runtime.Interpreter
 
 import Scenarios
 import qualified Expression.Flow as FlowExpr
+import qualified DB.Native as DB
 
 initRegularRT = do
   opts <- newMVar Map.empty
@@ -67,9 +68,35 @@ initPlayerRT recEntries = do
 
 
 
+dbConfig = DB.Config
+student1, student2, student3, expelled1, expelled2 :: Student
+student1  = Student 1 False
+student2  = Student 2 False
+student3  = Student 3 False
+expelled1 = Student 4 True
+expelled2 = Student 5 True
+
 
 main :: IO ()
 main = hspec $ do
+
+  describe "Students count scenarios tests" $ do
+    it "Service Handle" $ do
+      let handle = Handle DB.connect DB.query putStrLn
+      result <- getStudentsCountSH handle "test_db" dbConfig
+      result `shouldBe` 3
+
+
+    it "Service Handle with mocks" $ do
+      let allStudents = [student1, student2, student3, expelled1, expelled2]
+      let expelledStudents = [expelled1, expelled2]
+      let mockedConnect _ _ = pure DB.MockedConn
+      let mockedQuery _ q
+            | q == queryAll      = pure allStudents
+            | q == queryExpelled = pure expelledStudents
+      let handle = Handle mockedConnect mockedQuery putStrLn
+      result <- getStudentsCountSH handle "test_db" dbConfig
+      result `shouldBe` 3
 
   describe "Compare GUID scenarios tests" $ do
     it "Flow scenario" $ do

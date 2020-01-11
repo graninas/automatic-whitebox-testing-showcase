@@ -10,8 +10,8 @@
 {-# LANGUAGE TypeSynonymInstances      #-}
 
 module DB.Native
-  ( Connection
-  , Config(..)
+  ( Connection (..)
+  , Config (..)
   , connect
   , query
   ) where
@@ -19,7 +19,9 @@ module DB.Native
 import           Data.Aeson   (FromJSON, ToJSON, decode, encode)
 import           GHC.Generics (Generic)
 
-data Connection = Connection String
+data Connection
+  = Connection String
+  | MockedConn
 
 data Config = Config
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)

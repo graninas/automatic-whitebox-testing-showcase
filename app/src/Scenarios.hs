@@ -8,6 +8,7 @@
 {-# LANGUAGE TypeApplications          #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
 {-# LANGUAGE ViewPatterns              #-}
+{-# LANGUAGE RankNTypes                #-}
 
 module Scenarios where
 
@@ -41,26 +42,51 @@ loadOrGenerateGuidIO fileName = do
       pure newGuid
 
 queryAll      = "SELECT * FROM students"
-queryDisabled = "SELECT * FROM students WHERE disabled=1"
+queryExpelled = "SELECT * FROM students WHERE expelled = 1"
 
-getStudentsCountIO :: String -> DB.Config -> IO Int
+type DBName = String
+type Query = String
+type DBConfig = DB.Config
+type DBConnection = DB.Connection
+
+data Handle = Handle
+  { hConnect :: DBName -> DBConfig -> IO DBConnection
+  , hQuery :: DBConnection -> Query -> IO Students
+  , hLogInfo :: String -> IO ()
+  }
+
+
+getStudentsCountIO :: DBName -> DB.Config -> IO Int
 getStudentsCountIO dbName cfg = do
   conn <- DB.connect dbName cfg
   students <- DB.query @Students conn queryAll
-  disabled <- DB.query @Students conn queryDisabled
+  expelled <- DB.query @Students conn queryExpelled
 
-  let count = length students - length disabled
+  let count = length students - length expelled
   when (count == 0) $ putStrLn "No records found."
+  pure count
+
+
+getStudentsCountSH :: Handle -> DBName -> DBConfig -> IO Int
+getStudentsCountSH handle dbName cfg = do
+  conn     <- hConnect handle dbName cfg
+
+  students <- hQuery handle conn queryAll
+  expelled <- hQuery handle conn queryExpelled
+
+  let count = length students - length expelled
+
+  when (count == 0) $ hLogInfo handle "No records found."
   pure count
 
 
 getStudentsCountFlow :: String -> DB.Config -> Flow Int
 getStudentsCountFlow dbName cfg = do
-  conn <- L.connect dbName cfg
+  conn     <- L.connect dbName cfg
   students <- L.query @Students conn queryAll
-  disabled <- L.query @Students conn queryDisabled
+  expelled <- L.query @Students conn queryExpelled
 
-  let count = length students - length disabled
+  let count = length students - length expelled
   when (count == 0) $ L.logInfo "No records found."
   pure count
 
@@ -87,7 +113,7 @@ compareGUIDs fileName = do
 --   when (null students) $ logInfo "No records found."
 --   pure $ length students
 
-data Student = Student
+data Student = Student Int Bool
   deriving (Generic, ToJSON, FromJSON)
 
 type Students = [Student]
