@@ -17,6 +17,7 @@ import Runtime.Types
 import Language
 import qualified Language as L
 import Runtime.Interpreter
+import qualified TestInterpreter as TI
 
 import Scenarios
 import qualified Expression.Flow as FlowExpr
@@ -79,6 +80,18 @@ expelled2 = Student 5 True
 
 main :: IO ()
 main = hspec $ do
+
+  describe "Test interpreter" $ do
+    it "test" $ do
+
+      testRt <- TI.TestRuntime
+        <$> TI.mkMocks [expelled1, expelled2, student1, student2, student3]
+        <*> TI.mkMocks [expelled1, expelled2]
+        <*> TI.mkMocks DB.MockedConn
+
+      res <- TI.runFlow testRt getStudentsCountFlow
+      res `shouldBe` 3
+
 
   describe "Students count scenarios tests" $ do
     it "Service Handle" $ do
