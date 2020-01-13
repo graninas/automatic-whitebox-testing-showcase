@@ -94,9 +94,10 @@ main = hspec $ do
     it "test" $ do
 
       testRt <- TI.TestRuntime
-        <$> TI.mkMocks [expelled1, expelled2, student1, student2, student3]
-        <*> TI.mkMocks [expelled1, expelled2]
+        <$> TI.mkMocks []
         <*> TI.mkMocks [DB.MockedConn]
+        <*> TI.mkMocks [ [expelled1, expelled2, student1, student2, student3]
+                       , [expelled1, expelled2] ]
 
       res <- TI.runFlow testRt $ getStudentsCountFlow "test_db" dbConfig
       res `shouldBe` 3

@@ -60,11 +60,16 @@ getNextRunIOMock rt = do
   pure $ unsafeCoerce $ head mocks
 
 getNextConnectMock :: TestRuntime -> IO a
-getNextConnectMock _ = error ""
+getNextConnectMock rt = do
+  mocks <- takeMVar $ _connectMocks rt
+  putMVar (_connectMocks rt) $ tail mocks
+  pure $ unsafeCoerce $ head mocks
 
 getNextRunDBMock :: TestRuntime -> IO a
-getNextRunDBMock _ = error ""
-
+getNextRunDBMock rt = do
+  mocks <- takeMVar $ _runDBMocks rt
+  putMVar (_runDBMocks rt) $ tail mocks
+  pure $ unsafeCoerce $ head mocks
 
 interpretFlowFTest :: TestRuntime -> FlowF a -> IO a
 interpretFlowFTest rt (RunIO ioAct next)      = next <$> getNextRunIOMock rt

@@ -28,6 +28,12 @@ import qualified DB.Native             as DB
 import           Language
 import qualified Language              as L
 
+
+data Student = Student Int Bool
+  deriving (Generic, ToJSON, FromJSON)
+
+type Students = [Student]
+
 loadOrGenerateGuidIO :: String -> IO String
 loadOrGenerateGuidIO fileName = do
   mbGuid <- fromString <$> readFile fileName
@@ -113,10 +119,6 @@ compareGUIDs fileName = do
 --   when (null students) $ logInfo "No records found."
 --   pure $ length students
 
-data Student = Student Int Bool
-  deriving (Generic, ToJSON, FromJSON)
-
-type Students = [Student]
 
 -- getStudentsCount :: String -> DB.Config -> Flow Int
 -- getStudentsCount dbName cfg = do
