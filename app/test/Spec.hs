@@ -77,6 +77,15 @@ student3  = Student 3 False
 expelled1 = Student 4 True
 expelled2 = Student 5 True
 
+getRecording :: Runtime -> IO RecordingEntries
+getRecording rt = case runMode rt of
+  RecordingMode rrt -> readMVar $ recordingMVar rrt
+  _ -> error "wrong mode."
+
+getErrors :: Runtime -> IO (Maybe PlaybackError)
+getErrors rt = case runMode rt of
+  ReplayingMode prtm -> readMVar $ errorMVar prtm
+  _ -> error "wrong mode."
 
 main :: IO ()
 main = hspec $ do
@@ -87,18 +96,16 @@ main = hspec $ do
       testRt <- TI.TestRuntime
         <$> TI.mkMocks [expelled1, expelled2, student1, student2, student3]
         <*> TI.mkMocks [expelled1, expelled2]
-        <*> TI.mkMocks DB.MockedConn
+        <*> TI.mkMocks [DB.MockedConn]
 
-      res <- TI.runFlow testRt getStudentsCountFlow
+      res <- TI.runFlow testRt $ getStudentsCountFlow "test_db" dbConfig
       res `shouldBe` 3
-
 
   describe "Students count scenarios tests" $ do
     it "Service Handle" $ do
       let handle = Handle DB.connect DB.query putStrLn
       result <- getStudentsCountSH handle "test_db" dbConfig
       result `shouldBe` 3
-
 
     it "Service Handle with mocks" $ do
       let allStudents = [student1, student2, student3, expelled1, expelled2]
@@ -110,6 +117,18 @@ main = hspec $ do
       let handle = Handle mockedConnect mockedQuery putStrLn
       result <- getStudentsCountSH handle "test_db" dbConfig
       result `shouldBe` 3
+
+    it "Flow recordings" $ do
+      rt <- initRecorderRT
+      runFlow rt $ getStudentsCount "test_db" dbConfig
+      entries <- getRecording rt
+
+      pRt <- initPlayerRT entries
+      runFlow pRt $ getStudentsCount "test_db" dbConfig
+      errors <- getErrors pRt
+      errors `shouldBe` Nothing
+
+
 
   describe "Compare GUID scenarios tests" $ do
     it "Flow scenario" $ do

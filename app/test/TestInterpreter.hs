@@ -13,24 +13,24 @@
 module TestInterpreter where
 
 import           Control.Concurrent (forkIO)
-import           Control.Concurrent.MVar (newEmptyMVar, newMVar, takeMVar
-                                         , putMVar, readMVar)
+import           Control.Concurrent.MVar
 import           Control.Monad         (unless, void, when)
 import           Control.Monad.Free
 import           Data.Aeson            (FromJSON, ToJSON, decode, encode)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy  as BSL
 import qualified Data.IntMap           as MArr
-import qualified Data.Map.Strict as Map
+import qualified Data.Map.Strict       as Map
 import           Data.Maybe            (isJust)
-import           Data.Map.Strict       as Map
 import           Data.Monoid           ((<>))
 import           Data.Proxy            (Proxy (..))
 import           Data.Text             (Text)
 import           Data.UUID             (toString)
 import           Data.UUID.V4          (nextRandom)
-import qualified Data.Vector            as V
+import qualified Data.Vector           as V
 import           GHC.Generics          (Generic)
+import           GHC.Exts              (Any)
+import           Unsafe.Coerce         (unsafeCoerce)
 
 import qualified DB.Native             as DB
 import           Language
@@ -40,22 +40,24 @@ import           Playback.Types
 import           Runtime.SystemCommands
 import           Runtime.Types
 import           Types
-import GHC.Any (Any)
 
 data TestRuntime = TestRuntime
-  { runIOMocks   :: MVar [Any]
-  , connectMocks :: MVar [Any]
-  , runDBMocks   :: MVar [Any]
+  { _runIOMocks   :: MVar [Any]
+  , _connectMocks :: MVar [Any]
+  , _runDBMocks   :: MVar [Any]
   }
 
 
-mkMocks :: [a] -> MVar [Any]
+mkMocks :: [a] -> IO (MVar [Any])
 mkMocks as = newMVar $ map unsafeCoerce as
 
 
 
 getNextRunIOMock :: TestRuntime -> IO a
-getNextRunIOMock _ = error ""
+getNextRunIOMock rt = do
+  mocks <- takeMVar $ _runIOMocks rt
+  putMVar (_runIOMocks rt) $ tail mocks
+  pure $ unsafeCoerce $ head mocks
 
 getNextConnectMock :: TestRuntime -> IO a
 getNextConnectMock _ = error ""
@@ -72,4 +74,4 @@ interpretFlowFTest rt (RunDB conn db _ next)  = next <$> getNextRunDBMock rt
 interpretFlowFTest _ _ = error ""
 
 runFlow :: TestRuntime -> Flow a -> IO a
-runFlow rt = foldFree (interpretFlowF rt)
+runFlow rt = foldFree (interpretFlowFTest rt)
