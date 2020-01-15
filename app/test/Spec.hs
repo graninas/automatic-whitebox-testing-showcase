@@ -90,8 +90,8 @@ getErrors rt = case runMode rt of
 main :: IO ()
 main = hspec $ do
 
-  describe "Test interpreter" $ do
-    it "test" $ do
+  describe "Students count scenarios tests" $ do
+    it "Test interpreter with mocks" $ do
 
       testRt <- TI.TestRuntime
         <$> TI.mkMocks []
@@ -102,8 +102,7 @@ main = hspec $ do
       res <- TI.runFlow testRt $ getStudentsCountFlow "test_db" dbConfig
       res `shouldBe` 3
 
-  describe "Students count scenarios tests" $ do
-    it "Service Handle" $ do
+    it "Service Handle without mocks" $ do
       let handle = Handle DB.connect DB.query putStrLn
       result <- getStudentsCountSH handle "test_db" dbConfig
       result `shouldBe` 3
