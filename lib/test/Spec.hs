@@ -21,7 +21,7 @@ initRegularRT = do
   opts <- newMVar Map.empty
   pure $ Runtime
    { runMode = RegularMode
-   , options = opts
+   , runtimeData = Left $ OperationalData opts
    }
 
 initRecorderRT = do
@@ -36,7 +36,7 @@ initRecorderRT = do
         }
   pure $ Runtime
     { runMode = RecordingMode recRt
-    , options = opts
+    , runtimeData = Left $ OperationalData opts
     }
 
 initPlayerRT recEntries = do
@@ -58,7 +58,7 @@ initPlayerRT recEntries = do
         }
   pure $ Runtime
     { runMode = ReplayingMode pRt
-    , options = opts
+    , runtimeData = Left $ OperationalData opts
     }
 
 cmdScript = do

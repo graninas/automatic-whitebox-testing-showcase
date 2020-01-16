@@ -31,6 +31,7 @@ import           Data.UUID             (toString)
 import           Data.UUID.V4          (nextRandom)
 import qualified Data.Vector            as V
 import           GHC.Generics          (Generic)
+import           Unsafe.Coerce         (unsafeCoerce)
 
 import qualified DB.Native             as DB
 import           Language
@@ -45,7 +46,7 @@ forkF :: Runtime -> Flow a -> IO ()
 forkF rt flow = void $ forkIO $ void $ runFlow rt flow
 
 forkPlayerRt :: String -> PlayerRuntime -> IO (Maybe PlayerRuntime)
-forkPlayerRt newFlowGUID PlayerRuntime{..} =
+forkPlayerRt newFlowGUID PlayerRuntime {..} =
   case Map.lookup newFlowGUID forkedFlowRecordings of
     Nothing -> do
       let missedRecsErr = Just $ PlaybackError
@@ -68,7 +69,7 @@ forkPlayerRt newFlowGUID PlayerRuntime{..} =
         }
 
 forkRecorderRt :: String -> RecorderRuntime -> IO RecorderRuntime
-forkRecorderRt newFlowGUID RecorderRuntime{..} = do
+forkRecorderRt newFlowGUID RecorderRuntime {..} = do
   recordingVar <- newMVar V.empty
   forkedRecs   <- takeMVar forkedRecordingsVar
   let forkedRecs' = Map.insert newFlowGUID recordingVar forkedRecs
@@ -79,7 +80,7 @@ forkRecorderRt newFlowGUID RecorderRuntime{..} = do
     , ..
     }
 
-forkBackendRuntime flowGUID Runtime{..} = do
+forkBackendRuntime flowGUID Runtime {..} = do
   mbForkedMode <- case runMode of
     RegularMode              -> pure $ Just RegularMode
     RecordingMode recorderRt -> Just . RecordingMode <$> forkRecorderRt flowGUID recorderRt
@@ -123,26 +124,57 @@ runDatabase nativeConn = foldFree (interpretDatabaseF nativeConn)
 
 --------------------------------------------------------------------------------
 -- Flow interpreter
+
+getNextRunIOMock :: MockedData -> IO a
+getNextRunIOMock rt = do
+  mocks <- takeMVar $ runIOMocks rt
+  putMVar (runIOMocks rt) $ tail mocks
+  pure $ unsafeCoerce $ head mocks
+
+getNextConnectMock :: MockedData -> IO a
+getNextConnectMock rt = do
+  mocks <- takeMVar $ connectMocks rt
+  putMVar (connectMocks rt) $ tail mocks
+  pure $ unsafeCoerce $ head mocks
+
+getNextRunDBMock :: MockedData -> IO a
+getNextRunDBMock rt = do
+  mocks <- takeMVar $ runDBMocks rt
+  putMVar (runDBMocks rt) $ tail mocks
+  pure $ unsafeCoerce $ head mocks
+
+
+
+withRuntimeData (Left l) (lAct, rAct) = lAct l
+withRuntimeData (Right r) (lAct, rAct) = rAct r
+
 interpretFlowF :: Runtime -> FlowF a -> IO a
 
-interpretFlowF Runtime{..} (GetOption k next) =
-  next <$> withRunMode runMode (mkGetOptionEntry k) maybeValue
+interpretFlowF Runtime {..} (GetOption k next) =
+  next <$>
+    ( withRunMode runMode (mkGetOptionEntry k)
+    $ withRuntimeData runtimeData (maybeValue, \_ -> error "GetOpt mock not implemented") )
   where
-    maybeValue = do
-          m <- readMVar options
-          pure $ decodeFromStr =<< Map.lookup (encodeToStr k) m
+    maybeValue (OperationalData {..}) = do
+      m <- readMVar options
+      pure $ decodeFromStr =<< Map.lookup (encodeToStr k) m
 
-interpretFlowF Runtime{..} (SetOption k v next) =
-  next <$> withRunMode runMode (mkSetOptionEntry k v) set
+interpretFlowF Runtime {..} (SetOption k v next) =
+  next <$>
+    ( withRunMode runMode (mkSetOptionEntry k v)
+    $ withRuntimeData runtimeData (set, \_ -> pure ()))
   where
-    set = do
+    set (OperationalData {..}) = do
       m <- takeMVar options
       let newMap = Map.insert (encodeToStr k) (encodeToStr v) m
       putMVar options newMap
 
-interpretFlowF rt (RunSysCmd cmd next) = do
-  next <$> withRunMode (runMode rt) (mkRunSysCmdEntry cmd) (runCmd cmd)
+interpretFlowF Runtime {..} (RunSysCmd cmd next) =
+  next <$>
+    ( withRunMode runMode (mkRunSysCmdEntry cmd)
+    $ withRuntimeData runtimeData (\_ -> runCmd cmd, \_ -> error "RunSysCmd mock not implemented"))
 
+-- TODO: mock
 interpretFlowF rt (Fork desc flowGUID flow next) = do
   mbForkedRt <- forkBackendRuntime flowGUID rt
   void $ withRunMode (runMode rt) (mkForkFlowEntry desc flowGUID)
@@ -151,33 +183,34 @@ interpretFlowF rt (Fork desc flowGUID flow next) = do
       Just forkedBrt -> forkF forkedBrt flow *> pure ())
   pure $ next ()
 
-interpretFlowF rt (GenerateGUID next) = do
-  next <$> withRunMode (runMode rt) mkGenerateGUIDEntry
-    (toString <$> nextRandom)
+interpretFlowF Runtime {..} (GenerateGUID next) =
+  next <$>
+    ( withRunMode runMode mkGenerateGUIDEntry
+    $ withRuntimeData runtimeData (\_ -> toString <$> nextRandom, \_ -> error "GenerateGUID mock not implemented"))
 
-interpretFlowF rt (RunIO ioAct next) =
-  next <$> withRunMode (runMode rt) mkRunIOEntry ioAct
+interpretFlowF Runtime {..} (RunIO ioAct next) =
+  next <$>
+    ( withRunMode runMode mkRunIOEntry
+    $ withRuntimeData runtimeData (\_ -> ioAct, \_ -> error "RunIO mock not implemented"))
 
-interpretFlowF rt (LogInfo msg next) =
-  next <$> withRunMode (runMode rt)
-    (mkLogInfoEntry msg)
-    (putStrLn msg)
+interpretFlowF Runtime {..} (LogInfo msg next) =
+  next <$>
+    ( withRunMode runMode (mkLogInfoEntry msg)
+    $ withRuntimeData runtimeData (\_ -> putStrLn msg, \_ -> pure ()))
 
-interpretFlowF rt (Connect dbName dbConfig next) = do
-  conn <- withRunMode (runMode rt)
-    (mkConnectEntry dbName dbConfig)
-    (NativeConn dbName <$> DB.connect dbName dbConfig)
-  pure $ next conn
+interpretFlowF Runtime {..} (Connect dbName dbConfig next) = do
+  let act = NativeConn dbName <$> DB.connect dbName dbConfig
+  next <$>
+    ( withRunMode runMode (mkConnectEntry dbName dbConfig)
+    $ withRuntimeData runtimeData (\_ -> act, getNextConnectMock))
 
-interpretFlowF rt (RunDB conn qInfo db next) = do
-  res <- withRunMode (runMode rt)
-    (mkRunDBEntry conn qInfo)
-    (case conn of
-        NativeConn _ nativeConn -> runDatabase nativeConn db
-        MockedConn _            -> error "Should not be evaluated.")
-  pure $ next res
-
-
+interpretFlowF Runtime {..} (RunDB conn qInfo db next) = do
+  let act = case conn of
+          NativeConn _ nativeConn -> runDatabase nativeConn db
+          MockedConn _            -> error "Should not be evaluated."
+  next <$>
+    ( withRunMode runMode (mkRunDBEntry conn qInfo)
+    $ withRuntimeData runtimeData (\_ -> act, getNextRunDBMock))
 
 runFlow :: Runtime -> Flow a -> IO a
 runFlow rt = foldFree (interpretFlowF rt)

@@ -23,12 +23,23 @@ import           Data.Aeson         (ToJSON, FromJSON, encode, decode)
 import           Data.Proxy         (Proxy(..))
 import           Data.Text          (Text)
 import           GHC.Generics       (Generic)
+import           GHC.Exts           (Any)
 
 import           Playback.Types
 
+data OperationalData = OperationalData
+    { options :: MVar (Map String String)
+    }
+
+data MockedData = MockedData
+    { runIOMocks   :: MVar [Any]
+    , connectMocks :: MVar [Any]
+    , runDBMocks   :: MVar [Any]
+    }
+
 data Runtime = Runtime
-  { runMode :: RunMode
-  , options :: MVar (Map String String)
+  { runMode     :: RunMode
+  , runtimeData :: Either OperationalData MockedData
   }
 
 data RunMode

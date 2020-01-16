@@ -17,7 +17,7 @@ import Runtime.Types
 import Language
 import qualified Language as L
 import Runtime.Interpreter
-import qualified TestInterpreter as TI
+import Mocks
 
 import Scenarios
 import qualified Expression.Flow as FlowExpr
@@ -27,7 +27,7 @@ initRegularRT = do
   opts <- newMVar Map.empty
   pure $ Runtime
    { runMode = RegularMode
-   , options = opts
+   , runtimeData = Left $ OperationalData opts
    }
 
 initRecorderRT = do
@@ -42,7 +42,7 @@ initRecorderRT = do
         }
   pure $ Runtime
     { runMode = RecordingMode recRt
-    , options = opts
+    , runtimeData = Left $ OperationalData opts
     }
 
 initPlayerRT recEntries = do
@@ -64,7 +64,7 @@ initPlayerRT recEntries = do
         }
   pure $ Runtime
     { runMode = ReplayingMode pRt
-    , options = opts
+    , runtimeData = Left $ OperationalData opts
     }
 
 
@@ -91,15 +91,17 @@ main :: IO ()
 main = hspec $ do
 
   describe "Students count scenarios tests" $ do
-    it "Test interpreter with mocks" $ do
+    it "Interpreter with mocks" $ do
 
-      testRt <- TI.TestRuntime
-        <$> TI.mkMocks []
-        <*> TI.mkMocks [DB.MockedConn]
-        <*> TI.mkMocks [ [expelled1, expelled2, student1, student2, student3]
-                       , [expelled1, expelled2] ]
+      mockedData <- MockedData
+        <$> mkMocks []
+        <*> mkMocks [DB.MockedConn]
+        <*> mkMocks [ [expelled1, expelled2, student1, student2, student3]
+                    , [expelled1, expelled2] ]
 
-      res <- TI.runFlow testRt $ getStudentsCountFlow "test_db" dbConfig
+      let testRt = Runtime RegularMode (Right mockedData)
+
+      res <- runFlow testRt $ getStudentsCountFlow "test_db" dbConfig
       res `shouldBe` 3
 
     it "Service Handle without mocks" $ do
@@ -118,7 +120,7 @@ main = hspec $ do
       result <- getStudentsCountSH handle "test_db" dbConfig
       result `shouldBe` 3
 
-    it "Flow recordings" $ do
+    it "Flow recordings with mocks" $ do
       rt <- initRecorderRT
       runFlow rt $ getStudentsCount "test_db" dbConfig
       entries <- getRecording rt

@@ -17,7 +17,7 @@ import Expression.Expr
 main :: IO ()
 main = do
   opts <- newMVar Map.empty
-  let rt = R.Runtime R.RegularMode opts
+  let rt = R.Runtime R.RegularMode (Left $ R.OperationalData opts)
 
   args <- getArgs
   mbFlowRes <- case args of
