@@ -7,25 +7,22 @@
 {-# LANGUAGE TypeApplications          #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
 
-module Types where
+module Types
+  ( module Types
+  , module X
+  ) where
 
-import           Control.Monad         (unless, void, when)
-import           Control.Monad.Free
-import           Data.Aeson            (FromJSON, ToJSON, decode, encode)
-import qualified Data.ByteString.Char8 as BS
-import qualified Data.ByteString.Lazy  as BSL
-import qualified Data.IntMap           as MArr
-import           Data.Maybe            (isJust)
-import           Data.Proxy            (Proxy (..))
-import           Data.Text             (Text)
-import           Data.UUID             (toString)
-import           Data.UUID.V4          (nextRandom)
+import           Data.Aeson            (FromJSON, ToJSON)
 import           GHC.Generics          (Generic)
+import           DB.Native             (NativeConnection)
 
-import qualified DB.Native             as DB
+import           DB.Native             as X (DBConfig(..), Query)
 
 type DBName = String
 
-data Connection
-  = NativeConn DBName DB.Connection
-  | MockedConn DBName
+newtype MockedConnection = MockedConnection DBName
+  deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
+
+data DBConnection
+  = NativeConn DBName NativeConnection
+  | MockedConn MockedConnection

@@ -24,9 +24,10 @@ import           Data.UUID             (toString, fromString)
 import           Data.UUID.V4          (nextRandom)
 import           GHC.Generics          (Generic)
 
-import qualified DB.Native             as DB
 import           Language
+import           Types
 import qualified Language              as L
+import qualified DB.Native             as DB
 
 
 data Student = Student Int Bool
@@ -50,11 +51,6 @@ loadOrGenerateGuidIO fileName = do
 queryAll      = "SELECT * FROM students"
 queryExpelled = "SELECT * FROM students WHERE expelled = 1"
 
-type DBName = String
-type Query = String
-type DBConfig = DB.Config
-type DBConnection = DB.Connection
-
 data Handle = Handle
   { hConnect :: DBName -> DBConfig -> IO DBConnection
   , hQuery :: DBConnection -> Query -> IO Students
@@ -62,7 +58,7 @@ data Handle = Handle
   }
 
 
-getStudentsCountIO :: DBName -> DB.Config -> IO Int
+getStudentsCountIO :: DBName -> DBConfig -> IO Int
 getStudentsCountIO dbName cfg = do
   conn <- DB.connect dbName cfg
   students <- DB.query @Students conn queryAll
@@ -86,7 +82,7 @@ getStudentsCountSH handle dbName cfg = do
   pure count
 
 
-getStudentsCountFlow :: String -> DB.Config -> Flow Int
+getStudentsCountFlow :: String -> DBConfig -> Flow Int
 getStudentsCountFlow dbName cfg = do
   conn     <- L.connect dbName cfg
   students <- L.query @Students conn queryAll
@@ -120,14 +116,14 @@ compareGUIDs fileName = do
 --   pure $ length students
 
 
--- getStudentsCount :: String -> DB.Config -> Flow Int
+-- getStudentsCount :: String -> DBConfig -> Flow Int
 -- getStudentsCount dbName cfg = do
 --   (students :: [Student]) <- runDB $ do
 --     conn <- connect dbName cfg
 --     query conn "SELECT * FROM students"
 --   pure $ length students
 
-getStudentsCount :: String -> DB.Config -> Flow Int
+getStudentsCount :: String -> DBConfig -> Flow Int
 getStudentsCount dbName cfg = do
   conn <- connect dbName cfg
   (students :: [Student]) <- query conn "SELECT * FROM students"

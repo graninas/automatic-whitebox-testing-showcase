@@ -6,6 +6,7 @@
 {-# LANGUAGE TypeSynonymInstances      #-}
 {-# LANGUAGE FlexibleInstances         #-}
 {-# LANGUAGE TypeApplications          #-}
+{-# LANGUAGE BangPatterns              #-}
 
 module Runtime.Types where
 
@@ -16,10 +17,10 @@ import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy as BSL
 import           Data.UUID          (toString)
 import           Data.Maybe         (isJust)
-import           Data.Map.Strict (Map)
+import           Data.Map.Strict    (Map)
 import qualified Data.IntMap as MArr
 import           Data.UUID.V4       (nextRandom)
-import           Data.Aeson         (ToJSON, FromJSON, encode, decode)
+import           Data.Aeson         (ToJSON, FromJSON, Value, encode, decode)
 import           Data.Proxy         (Proxy(..))
 import           Data.Text          (Text)
 import           GHC.Generics       (Generic)
@@ -28,18 +29,21 @@ import           GHC.Exts           (Any)
 import           Playback.Types
 
 data OperationalData = OperationalData
-    { options :: MVar (Map String String)
+    { options :: !(MVar (Map String String))
     }
 
 data MockedData = MockedData
-    { runIOMocks   :: MVar [Any]
-    , connectMocks :: MVar [Any]
-    , runDBMocks   :: MVar [Any]
+    { runIOMocks   :: !(MVar [Value])
+    , connectMocks :: !(MVar [Value])
+    , runDBMocks   :: !(MVar [Value])
+    -- { runIOMocks   :: !(MVar [Any])
+    -- , connectMocks :: !(MVar [Any])
+    -- , runDBMocks   :: !(MVar [Any])
     }
 
 data Runtime = Runtime
-  { runMode     :: RunMode
-  , runtimeData :: Either OperationalData MockedData
+  { runMode     :: !RunMode
+  , runtimeData :: !(Either OperationalData MockedData)
   }
 
 data RunMode

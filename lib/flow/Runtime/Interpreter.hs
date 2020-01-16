@@ -13,11 +13,11 @@
 module Runtime.Interpreter where
 
 import           Control.Concurrent (forkIO)
-import           Control.Concurrent.MVar (newEmptyMVar, newMVar, takeMVar
+import           Control.Concurrent.MVar (MVar, newEmptyMVar, newMVar, takeMVar
                                          , putMVar, readMVar)
 import           Control.Monad         (unless, void, when)
 import           Control.Monad.Free
-import           Data.Aeson            (FromJSON, ToJSON, decode, encode)
+import           Data.Aeson            (FromJSON, ToJSON, Value, Result(..), decode, encode, fromJSON)
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy  as BSL
 import qualified Data.IntMap           as MArr
@@ -114,34 +114,38 @@ withRunMode (ReplayingMode playerRt) mkRRItem act
 
 --------------------------------------------------------------------------------
 -- DB interpreter
-interpretDatabaseF :: DB.Connection -> DatabaseF a -> IO a
+interpretDatabaseF :: DB.NativeConnection -> DatabaseF a -> IO a
 
 interpretDatabaseF nativeConn (Query q next) =
   next <$> DB.query nativeConn q
 
-runDatabase :: DB.Connection -> Database a -> IO a
+runDatabase :: DB.NativeConnection -> Database a -> IO a
 runDatabase nativeConn = foldFree (interpretDatabaseF nativeConn)
 
 --------------------------------------------------------------------------------
 -- Flow interpreter
 
-getNextRunIOMock :: MockedData -> IO a
-getNextRunIOMock rt = do
-  mocks <- takeMVar $ runIOMocks rt
-  putMVar (runIOMocks rt) $ tail mocks
-  pure $ unsafeCoerce $ head mocks
+getNextMock :: (ToJSON a, FromJSON a) => MVar [Value] -> String -> IO a
+getNextMock mvar method = do
+  mocks <- takeMVar mvar
+  case mocks of
+    [] -> do
+      putMVar mvar []
+      error $ "Mocks are exausted for " ++ method
+    (m:ms) -> do
+      putMVar mvar ms
+      case fromJSON m of
+        Success r -> pure r
+        Error err -> error $ "Failed to decode mock for " ++ method ++ ": " ++ err
 
-getNextConnectMock :: MockedData -> IO a
-getNextConnectMock rt = do
-  mocks <- takeMVar $ connectMocks rt
-  putMVar (connectMocks rt) $ tail mocks
-  pure $ unsafeCoerce $ head mocks
+getNextRunIOMock :: (ToJSON a, FromJSON a) => MockedData -> IO a
+getNextRunIOMock rt = getNextMock (runIOMocks rt) "RunIO"
 
-getNextRunDBMock :: MockedData -> IO a
-getNextRunDBMock rt = do
-  mocks <- takeMVar $ runDBMocks rt
-  putMVar (runDBMocks rt) $ tail mocks
-  pure $ unsafeCoerce $ head mocks
+getNextConnectMock :: MockedData -> IO DBConnection
+getNextConnectMock rt = MockedConn <$> getNextMock (connectMocks rt) "Connect"
+
+getNextRunDBMock :: (ToJSON a, FromJSON a) => MockedData -> IO a
+getNextRunDBMock rt = getNextMock (runDBMocks rt) "RunDB"
 
 
 
@@ -207,7 +211,7 @@ interpretFlowF Runtime {..} (Connect dbName dbConfig next) = do
 interpretFlowF Runtime {..} (RunDB conn qInfo db next) = do
   let act = case conn of
           NativeConn _ nativeConn -> runDatabase nativeConn db
-          MockedConn _            -> error "Should not be evaluated."
+          MockedConn (MockedConnection dbName) -> error $ "MockedConn should not be evaluated: " ++ dbName
   next <$>
     ( withRunMode runMode (mkRunDBEntry conn qInfo)
     $ withRuntimeData runtimeData (\_ -> act, getNextRunDBMock))

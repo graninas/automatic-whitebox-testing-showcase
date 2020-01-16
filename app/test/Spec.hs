@@ -1,6 +1,7 @@
 
 {-# LANGUAGE DuplicateRecordFields     #-}
 {-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE TypeApplications          #-}
 
 import Control.Concurrent.MVar
 import Control.Monad (when, unless)
@@ -15,13 +16,12 @@ import Data.UUID.V4          (nextRandom)
 import Playback.Types
 import Runtime.Types
 import Language
+import Types
 import qualified Language as L
 import Runtime.Interpreter
 import Mocks
-
 import Scenarios
 import qualified Expression.Flow as FlowExpr
-import qualified DB.Native as DB
 
 initRegularRT = do
   opts <- newMVar Map.empty
@@ -30,7 +30,7 @@ initRegularRT = do
    , runtimeData = Left $ OperationalData opts
    }
 
-initRecorderRT = do
+initRecorderRT mbMocks = do
   recMVar <- newMVar V.empty
   forkedRecMvar <- newMVar Map.empty
   opts <- newMVar Map.empty
@@ -42,7 +42,9 @@ initRecorderRT = do
         }
   pure $ Runtime
     { runMode = RecordingMode recRt
-    , runtimeData = Left $ OperationalData opts
+    , runtimeData = case mbMocks of
+        Nothing -> Left $ OperationalData opts
+        Just mocks -> Right mocks
     }
 
 initPlayerRT recEntries = do
@@ -69,7 +71,7 @@ initPlayerRT recEntries = do
 
 
 
-dbConfig = DB.Config
+dbConfig = DBConfig
 student1, student2, student3, expelled1, expelled2 :: Student
 student1  = Student 1 False
 student2  = Student 2 False
@@ -94,8 +96,8 @@ main = hspec $ do
     it "Interpreter with mocks" $ do
 
       mockedData <- MockedData
-        <$> mkMocks []
-        <*> mkMocks [DB.MockedConn]
+        <$> mkMocks @Int []
+        <*> mkMocks [MockedConnection "1"]
         <*> mkMocks [ [expelled1, expelled2, student1, student2, student3]
                     , [expelled1, expelled2] ]
 
@@ -104,15 +106,15 @@ main = hspec $ do
       res <- runFlow testRt $ getStudentsCountFlow "test_db" dbConfig
       res `shouldBe` 3
 
-    it "Service Handle without mocks" $ do
-      let handle = Handle DB.connect DB.query putStrLn
-      result <- getStudentsCountSH handle "test_db" dbConfig
-      result `shouldBe` 3
+    -- it "Service Handle without mocks" $ do
+    --   let handle = Handle DB.connect DB.query putStrLn
+    --   result <- getStudentsCountSH handle "test_db" dbConfig
+    --   result `shouldBe` 3
 
     it "Service Handle with mocks" $ do
       let allStudents = [student1, student2, student3, expelled1, expelled2]
       let expelledStudents = [expelled1, expelled2]
-      let mockedConnect _ _ = pure DB.MockedConn
+      let mockedConnect _ _ = pure $ MockedConn $ MockedConnection "1"
       let mockedQuery _ q
             | q == queryAll      = pure allStudents
             | q == queryExpelled = pure expelledStudents
@@ -121,7 +123,13 @@ main = hspec $ do
       result `shouldBe` 3
 
     it "Flow recordings with mocks" $ do
-      rt <- initRecorderRT
+      mockedData <- MockedData
+        <$> mkMocks @Int []
+        <*> mkMocks [ MockedConnection "1" ]
+        <*> mkMocks [ [expelled1, expelled2, student1, student2, student3]
+                    , [expelled1, expelled2] ]
+
+      rt <- initRecorderRT $ Just mockedData
       runFlow rt $ getStudentsCount "test_db" dbConfig
       entries <- getRecording rt
 
@@ -131,10 +139,9 @@ main = hspec $ do
       errors `shouldBe` Nothing
 
 
-
   describe "Compare GUID scenarios tests" $ do
     it "Flow scenario" $ do
-      rt <- initRecorderRT
+      rt <- initRecorderRT Nothing
       runFlow rt $ compareGUIDs "test/guid.txt"
       case runMode rt of
         RecordingMode rrt -> do

@@ -10,24 +10,25 @@
 {-# LANGUAGE TypeSynonymInstances      #-}
 
 module DB.Native
-  ( Connection (..)
-  , Config (..)
+  ( NativeConnection (..)
+  , DBConfig (..)
+  , Query
   , connect
   , query
   ) where
 
-import           Data.Aeson   (FromJSON, ToJSON, decode, encode)
+import           Data.Aeson   (FromJSON, ToJSON)
 import           GHC.Generics (Generic)
 
-data Connection
-  = Connection String
-  | MockedConn
+newtype NativeConnection = NativeConnection String
 
-data Config = Config
+data DBConfig = DBConfig
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON)
 
-connect :: String -> Config -> IO Connection
-connect dbName _ = pure $ Connection dbName
+type Query = String
 
-query :: Connection -> String -> IO a
+connect :: String -> DBConfig -> IO NativeConnection
+connect dbName _ = pure $ NativeConnection dbName
+
+query :: NativeConnection -> String -> IO a
 query _ _ = error "Just a demo, not implemented"

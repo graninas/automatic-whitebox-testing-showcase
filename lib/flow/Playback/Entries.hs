@@ -23,7 +23,6 @@ import           Data.UUID             (toString)
 import           Data.UUID.V4          (nextRandom)
 import           GHC.Generics          (Generic)
 
-import qualified DB.Native             as DB
 import           Playback.Types
 import           Types
 import           Runtime.Options
@@ -89,12 +88,12 @@ mkLogInfoEntry :: String -> () -> LogInfoEntry
 mkLogInfoEntry msg _ = LogInfoEntry msg
 
 data ConnectEntry = ConnectEntry
-  { ceDBConfig :: DB.Config
+  { ceDBConfig :: DBConfig
   , ceDBName :: String
   }
   deriving (Show, Eq, Generic, ToJSON, FromJSON)
 
-mkConnectEntry :: String -> DB.Config -> Connection -> ConnectEntry
+mkConnectEntry :: String -> DBConfig -> DBConnection -> ConnectEntry
 mkConnectEntry dbName dbCfg _ = ConnectEntry dbCfg dbName
 
 data RunDBEntry = RunDBEntry
@@ -106,12 +105,12 @@ data RunDBEntry = RunDBEntry
 
 mkRunDBEntry
   :: ToJSON a
-  => Connection
+  => DBConnection
   -> String
   -> a
   -> RunDBEntry
 mkRunDBEntry (NativeConn dbName _) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToValue dbRes
-mkRunDBEntry (MockedConn dbName) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToValue dbRes
+mkRunDBEntry (MockedConn (MockedConnection dbName)) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToValue dbRes
 
 instance RRItem GetOptionEntry where
   toRecordingEntry rrItem idx mode = RecordingEntry idx mode "GetOptionEntry" $ encodeToValue rrItem
@@ -174,8 +173,8 @@ instance RRItem ConnectEntry where
   fromRecordingEntry (RecordingEntry _ _ _ payload) = decodeFromValue payload
   getTag _ = "ConnectEntry"
 
-instance MockedResult ConnectEntry Connection where
-  getMock (ConnectEntry _ dbName) = Just $ MockedConn dbName
+instance MockedResult ConnectEntry DBConnection where
+  getMock (ConnectEntry _ dbName) = Just $ MockedConn $ MockedConnection dbName
 
 instance RRItem RunDBEntry where
   toRecordingEntry rrItem idx mode = RecordingEntry idx mode "RunDBEntry" $ encodeToValue rrItem
