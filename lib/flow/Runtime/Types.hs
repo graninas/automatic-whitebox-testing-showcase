@@ -11,20 +11,10 @@
 module Runtime.Types where
 
 import           Control.Concurrent.MVar (MVar)
-import           Control.Monad      (unless, when, void)
-import           Control.Monad.Free
-import qualified Data.ByteString.Char8 as BS
-import qualified Data.ByteString.Lazy  as BSL
-import           Data.UUID          (toString)
-import           Data.Maybe         (isJust)
-import           Data.Map.Strict    (Map)
-import qualified Data.IntMap as MArr
-import           Data.UUID.V4       (nextRandom)
-import           Data.Aeson         (ToJSON, FromJSON, Value, encode, decode)
-import           Data.Proxy         (Proxy(..))
-import           Data.Text          (Text)
-import           GHC.Generics       (Generic)
-import           GHC.Exts           (Any)
+import           Data.ByteString.Lazy    (ByteString)
+import           Data.Map.Strict         (Map)
+import           Data.Aeson              (ToJSON, FromJSON, Value)
+import           GHC.Generics            (Generic)
 
 import           Playback.Types
 
@@ -33,9 +23,9 @@ data OperationalData = OperationalData
     }
 
 data MockedData = MockedData
-    { runIOMocks   :: MVar [BSL.ByteString]
-    , connectMocks :: MVar [BSL.ByteString]
-    , runDBMocks   :: MVar [BSL.ByteString]
+    { runIOMocks   :: MVar [ByteString]
+    , connectMocks :: MVar [ByteString]
+    , runDBMocks   :: MVar [ByteString]
     }
 
 data Runtime = Runtime
