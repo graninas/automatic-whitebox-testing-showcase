@@ -97,7 +97,7 @@ getStudentsCountFlow dbName cfg = do
 
   let count = length students - length expelled
   when (count == 0) $ L.logInfo "No records found."
-  when (count /= 0) $ L.logInfo $ "Number of students: " ++ show count
+  when (count /= 0) $ L.logInfo $ "Count: " ++ show count
   pure count
 
 
