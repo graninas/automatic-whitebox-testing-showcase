@@ -96,7 +96,7 @@ main = hspec $ do
 
       mockedData <- MockedData
         <$> mkMocks @Int []
-        <*> mkMocks [ MockedConnection "1" ]
+        <*> mkMocks [ MockedConnection "test_db" ]
         <*> mkMocks [ [expelled1, expelled2, student1, student2, student3]
                     , [expelled1, expelled2] ]
 
@@ -113,7 +113,7 @@ main = hspec $ do
     it "Service Handle with mocks" $ do
       let allStudents = [student1, student2, student3, expelled1, expelled2]
       let expelledStudents = [expelled1, expelled2]
-      let mockedConnect _ _ = pure $ MockedConn $ MockedConnection "1"
+      let mockedConnect _ _ = pure $ MockedConn $ MockedConnection "test_db"
       let mockedQuery _ q
             | q == queryAll      = pure allStudents
             | q == queryExpelled = pure expelledStudents
@@ -124,7 +124,7 @@ main = hspec $ do
     it "Flow recordings with mocks" $ do
       mockedData <- MockedData
         <$> mkMocks @Int []
-        <*> mkMocks [ MockedConnection "1" ]
+        <*> mkMocks [ MockedConnection "test_db" ]
         <*> mkMocks [ [expelled1, expelled2, student1, student2, student3]
                     , [expelled1, expelled2] ]
 

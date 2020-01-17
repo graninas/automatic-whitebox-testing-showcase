@@ -109,8 +109,10 @@ mkRunDBEntry
   -> String
   -> a
   -> RunDBEntry
-mkRunDBEntry (NativeConn dbName _) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToValue dbRes
-mkRunDBEntry (MockedConn (MockedConnection dbName)) qInfo dbRes = RunDBEntry dbName qInfo $ encodeToValue dbRes
+mkRunDBEntry (NativeConn dbName _) qInfo dbRes
+  = RunDBEntry dbName qInfo $ encodeToValue dbRes
+mkRunDBEntry (MockedConn (MockedConnection dbName)) qInfo dbRes
+  = RunDBEntry dbName qInfo $ encodeToValue dbRes
 
 instance RRItem GetOptionEntry where
   toRecordingEntry rrItem idx mode = RecordingEntry idx mode "GetOptionEntry" $ encodeToValue rrItem

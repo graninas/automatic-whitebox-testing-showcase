@@ -29,14 +29,14 @@ import           Types
 import           Runtime.Options
 
 data DatabaseF next where
-  Query :: String -> ([a] -> next) -> DatabaseF next
+  Query :: String -> (a -> next) -> DatabaseF next
 
 instance Functor DatabaseF where
   fmap f (Query q next) = Query q (f . next)
 
 type Database a = Free DatabaseF a
 
-query' :: String -> Database [a]
+query' :: String -> Database a
 query' q = liftF $ Query q id
 
 
@@ -105,5 +105,5 @@ runDB
   -> Flow s
 runDB conn qInfo db = liftF $ RunDB conn qInfo db id
 
-query :: (ToJSON s, FromJSON s, Typeable s) => DBConnection -> String -> Flow [s]
+query :: (ToJSON s, FromJSON s, Typeable s) => DBConnection -> String -> Flow s
 query conn q = runDB conn q $ query' q

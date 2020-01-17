@@ -22,7 +22,7 @@ import           DB.Native             as X (DBConfig(..), Query)
 
 type DBName = String
 
-newtype MockedConnection = MockedConnection DBName
+data MockedConnection = MockedConnection DBName
   deriving (Show, Eq, Ord, Generic, ToJSON, FromJSON, Typeable)
 
 data DBConnection
