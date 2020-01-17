@@ -89,6 +89,9 @@ getStudentsCountSH handle dbName cfg = do
   pure count
 
 
+dbConfig :: DBConfig
+dbConfig = DBConfig
+
 getStudentsCountFlow :: String -> DBConfig -> Flow Int
 getStudentsCountFlow dbName cfg = do
   conn     <- L.connect dbName cfg
@@ -130,3 +133,12 @@ compareGUIDs fileName = do
 --     conn <- connect dbName cfg
 --     query conn "SELECT * FROM students"
 --   pure $ length students
+
+
+
+student1, student2, student3, expelled1, expelled2 :: Student
+student1  = Student 1 False
+student2  = Student 2 False
+student3  = Student 3 False
+expelled1 = Student 4 True
+expelled2 = Student 5 True

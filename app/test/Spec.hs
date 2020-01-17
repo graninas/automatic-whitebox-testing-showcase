@@ -3,16 +3,16 @@
 {-# LANGUAGE OverloadedStrings         #-}
 {-# LANGUAGE TypeApplications          #-}
 
-import Control.Concurrent.MVar
-import Control.Monad (when, unless)
-import qualified Data.Map.Strict as Map
-import qualified Data.Vector as V
-import qualified Data.Text as T
+import           Control.Concurrent.MVar
+import           Control.Monad        (when, unless)
+import qualified Data.Map.Strict      as Map
+import qualified Data.Vector          as V
+import qualified Data.Text            as T
 import qualified Data.ByteString.Lazy as BL
-import           Data.Aeson            (decode, encode, toJSON)
-import           Data.UUID             (toString)
-import           Data.UUID.V4          (nextRandom)
-import Test.Hspec
+import           Data.Aeson           (decode, encode, toJSON)
+import           Data.UUID            (toString)
+import           Data.UUID.V4         (nextRandom)
+import           Test.Hspec
 
 import Playback.Types
 import Runtime.Types
@@ -68,16 +68,6 @@ initPlayerRT recEntries = do
     { runMode = ReplayingMode pRt
     , runtimeData = Left $ OperationalData opts
     }
-
-
-
-dbConfig = DBConfig
-student1, student2, student3, expelled1, expelled2 :: Student
-student1  = Student 1 False
-student2  = Student 2 False
-student3  = Student 3 False
-expelled1 = Student 4 True
-expelled2 = Student 5 True
 
 getRecording :: Runtime -> IO RecordingEntries
 getRecording rt = case runMode rt of
