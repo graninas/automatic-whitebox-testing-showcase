@@ -1,0 +1,76 @@
+{
+   "recording":{
+      "entries":[
+         [
+            0,
+            "Normal",
+            "ConnectEntry",
+            {
+               "ceDBName":"test_db",
+               "ceDBConfig":[
+
+               ]
+            }
+         ],
+         [
+            1,
+            "Normal",
+            "RunDBEntry",
+            {
+               "dbeDBName":"test_db",
+               "dbeDescription":"SELECT * FROM students",
+               "dbeJsonResult":[
+                  {
+                     "number":4,
+                     "expelled":true
+                  },
+                  {
+                     "number":5,
+                     "expelled":true
+                  },
+                  {
+                     "number":1,
+                     "expelled":false
+                  },
+                  {
+                     "number":2,
+                     "expelled":false
+                  },
+                  {
+                     "number":3,
+                     "expelled":false
+                  }
+               ]
+            }
+         ],
+         [
+            2,
+            "Normal",
+            "RunDBEntry",
+            {
+               "dbeDBName":"test_db",
+               "dbeDescription":"SELECT * FROM students WHERE expelled = 1",
+               "dbeJsonResult":[
+                  {
+                     "number":4,
+                     "expelled":true
+                  },
+                  {
+                     "number":5,
+                     "expelled":true
+                  }
+               ]
+            }
+         ],
+         [
+            3,
+            "Normal",
+            "LogInfoEntry",
+            {
+               "message":"Count: 3"
+            }
+         ]
+      ]
+   },
+   "jsonResult":0
+}

@@ -35,7 +35,7 @@ main = do
   args <- getArgs
   (flow, mocks) <- getStudentFlowAndMocks
   case args of
-    [] -> pure ()
+    [] -> putStrLn "Please specify arguments."
     ("recorder" : fName : []) -> recorder (Just mocks) fName flow
     ("player"   : fName : []) -> player fName flow
     _ -> error "Args not recognized"
