@@ -14,7 +14,7 @@ import           Control.Concurrent.MVar (MVar)
 import           Control.Monad      (unless, when, void)
 import           Control.Monad.Free
 import qualified Data.ByteString.Char8 as BS
-import qualified Data.ByteString.Lazy as BSL
+import qualified Data.ByteString.Lazy  as BSL
 import           Data.UUID          (toString)
 import           Data.Maybe         (isJust)
 import           Data.Map.Strict    (Map)
@@ -33,9 +33,9 @@ data OperationalData = OperationalData
     }
 
 data MockedData = MockedData
-    { runIOMocks   :: MVar [Value]
-    , connectMocks :: MVar [Value]
-    , runDBMocks   :: MVar [Value]
+    { runIOMocks   :: MVar [BSL.ByteString]
+    , connectMocks :: MVar [BSL.ByteString]
+    , runDBMocks   :: MVar [BSL.ByteString]
     }
 
 data Runtime = Runtime

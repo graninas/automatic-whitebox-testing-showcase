@@ -19,7 +19,6 @@ import Language
 import Types
 import qualified Language as L
 import Runtime.Interpreter
-import Mocks
 import Scenarios
 import qualified Expression.Flow as FlowExpr
 
@@ -130,11 +129,11 @@ main = hspec $ do
                     , [expelled1, expelled2] ]
 
       rt <- initRecorderRT $ Just mockedData
-      runFlow rt $ getStudentsCount "test_db" dbConfig
+      runFlow rt $ getStudentsCountFlow "test_db" dbConfig
       entries <- getRecording rt
 
       pRt <- initPlayerRT entries
-      runFlow pRt $ getStudentsCount "test_db" dbConfig
+      runFlow pRt $ getStudentsCountFlow "test_db" dbConfig
       errors <- getErrors pRt
       errors `shouldBe` Nothing
 

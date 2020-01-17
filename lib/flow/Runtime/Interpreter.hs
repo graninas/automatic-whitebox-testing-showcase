@@ -21,17 +21,13 @@ import           Data.Aeson            (FromJSON, ToJSON, Value, Result(..), dec
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy  as BSL
 import qualified Data.IntMap           as MArr
-import qualified Data.Map.Strict as Map
-import           Data.Maybe            (isJust)
-import           Data.Map.Strict       as Map
 import           Data.Monoid           ((<>))
-import           Data.Proxy            (Proxy (..))
-import           Data.Text             (Text)
+import qualified Data.Map.Strict       as Map
 import           Data.UUID             (toString)
 import           Data.UUID.V4          (nextRandom)
 import qualified Data.Vector            as V
 import           GHC.Generics          (Generic)
-import           Unsafe.Coerce         (unsafeCoerce)
+import           Data.Typeable
 
 import qualified DB.Native             as DB
 import           Language
@@ -124,9 +120,13 @@ runDatabase nativeConn = foldFree (interpretDatabaseF nativeConn)
 
 --------------------------------------------------------------------------------
 -- Flow interpreter
+mkMocks :: (ToJSON a, FromJSON a) => [a] -> IO (MVar [BSL.ByteString])
+mkMocks as = newMVar $ fmap encode as
 
-getNextMock :: (ToJSON a, FromJSON a) => MVar [Value] -> String -> IO a
-getNextMock mvar method = do
+getNextMock
+  :: forall a. (ToJSON a, FromJSON a, Typeable a)
+  => Proxy a -> MVar [BSL.ByteString] -> String -> IO a
+getNextMock p mvar method = do
   mocks <- takeMVar mvar
   case mocks of
     [] -> do
@@ -134,18 +134,20 @@ getNextMock mvar method = do
       error $ "Mocks are exausted for " ++ method
     (m:ms) -> do
       putMVar mvar ms
-      case fromJSON m of
-        Success r -> pure r
-        Error err -> error $ "Failed to decode mock for " ++ method ++ ": " ++ err
+      print $ typeOf p
+      print m
+      case decode m of
+        Just r -> pure r
+        Nothing -> error $ "Failed to decode mock for " ++ method
 
-getNextRunIOMock :: (ToJSON a, FromJSON a) => MockedData -> IO a
-getNextRunIOMock rt = getNextMock (runIOMocks rt) "RunIO"
+getNextRunIOMock :: forall a. (ToJSON a, FromJSON a, Typeable a) => MockedData -> IO a
+getNextRunIOMock rt = getNextMock (Proxy :: Proxy a) (runIOMocks rt) "RunIO"
 
 getNextConnectMock :: MockedData -> IO DBConnection
-getNextConnectMock rt = MockedConn <$> getNextMock (connectMocks rt) "Connect"
+getNextConnectMock rt = MockedConn <$> getNextMock (Proxy :: Proxy MockedConnection) (connectMocks rt) "Connect"
 
-getNextRunDBMock :: (ToJSON a, FromJSON a) => MockedData -> IO a
-getNextRunDBMock rt = getNextMock (runDBMocks rt) "RunDB"
+getNextRunDBMock :: forall a. (ToJSON a, FromJSON a, Typeable a) => MockedData -> IO a
+getNextRunDBMock rt = getNextMock (Proxy :: Proxy a) (runDBMocks rt) "RunDB"
 
 
 

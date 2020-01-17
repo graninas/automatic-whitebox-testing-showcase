@@ -6,6 +6,7 @@
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE TypeApplications          #-}
 {-# LANGUAGE TypeSynonymInstances      #-}
+{-# LANGUAGE DeriveDataTypeable        #-}
 
 module Language where
 
@@ -21,6 +22,7 @@ import           Data.Proxy            (Proxy (..))
 import           Data.Text             (Text)
 import           Data.UUID             (toString)
 import           Data.UUID.V4          (nextRandom)
+import           Data.Typeable
 import           GHC.Generics          (Generic)
 
 import           Types
@@ -48,7 +50,7 @@ data FlowF next where
   SetOption :: OptionEntity k v => k -> v -> (() -> next) -> FlowF next
 
   Connect :: DBName -> DBConfig -> (DBConnection -> next) -> FlowF next
-  RunDB :: (ToJSON s, FromJSON s)
+  RunDB :: (ToJSON s, FromJSON s, Typeable s)
         => DBConnection -> String -> Database s
         -> (s -> next) -> FlowF next
 
@@ -96,12 +98,12 @@ connect :: DBName -> DBConfig -> Flow DBConnection
 connect dbName dbCfg = liftF $ Connect dbName dbCfg id
 
 runDB
-  :: (ToJSON s, FromJSON s)
+  :: (ToJSON s, FromJSON s, Typeable s)
   => DBConnection
   -> String
   -> Database s
   -> Flow s
 runDB conn qInfo db = liftF $ RunDB conn qInfo db id
 
-query :: (ToJSON s, FromJSON s) => DBConnection -> String -> Flow [s]
+query :: (ToJSON s, FromJSON s, Typeable s) => DBConnection -> String -> Flow [s]
 query conn q = runDB conn q $ query' q

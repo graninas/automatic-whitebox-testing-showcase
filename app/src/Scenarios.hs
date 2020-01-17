@@ -9,6 +9,7 @@
 {-# LANGUAGE TypeSynonymInstances      #-}
 {-# LANGUAGE ViewPatterns              #-}
 {-# LANGUAGE RankNTypes                #-}
+{-# LANGUAGE DeriveDataTypeable        #-}
 
 module Scenarios where
 
@@ -23,6 +24,7 @@ import           Data.Text             (Text)
 import           Data.UUID             (toString, fromString)
 import           Data.UUID.V4          (nextRandom)
 import           GHC.Generics          (Generic)
+import           Data.Typeable
 
 import           Language
 import           Types
@@ -30,8 +32,11 @@ import qualified Language              as L
 import qualified DB.Native             as DB
 
 
-data Student = Student Int Bool
-  deriving (Generic, ToJSON, FromJSON)
+data Student = Student
+  { number :: Int
+  , expelled :: Bool
+  }
+  deriving (Generic, ToJSON, FromJSON, Typeable)
 
 type Students = [Student]
 
@@ -66,6 +71,7 @@ getStudentsCountIO dbName cfg = do
 
   let count = length students - length expelled
   when (count == 0) $ putStrLn "No records found."
+  when (count /= 0) $ putStrLn $ "Number of students: " ++ show count
   pure count
 
 
@@ -79,6 +85,7 @@ getStudentsCountSH handle dbName cfg = do
   let count = length students - length expelled
 
   when (count == 0) $ hLogInfo handle "No records found."
+  when (count /= 0) $ hLogInfo handle $ "Number of students: " ++ show count
   pure count
 
 
@@ -90,6 +97,7 @@ getStudentsCountFlow dbName cfg = do
 
   let count = length students - length expelled
   when (count == 0) $ L.logInfo "No records found."
+  when (count /= 0) $ L.logInfo $ "Number of students: " ++ show count
   pure count
 
 
@@ -122,13 +130,3 @@ compareGUIDs fileName = do
 --     conn <- connect dbName cfg
 --     query conn "SELECT * FROM students"
 --   pure $ length students
-
-getStudentsCount :: String -> DBConfig -> Flow Int
-getStudentsCount dbName cfg = do
-  conn <- connect dbName cfg
-  (students :: [Student]) <- query conn "SELECT * FROM students"
-  (disabled :: [Student]) <- query conn "SELECT * FROM students WHERE disabled=1"
-  let count = length students - length disabled
-  when (count == 0) $ logInfo "No records found."
-  when (count /= 0) $ logInfo $ "Number of students: " ++ show count
-  pure count
