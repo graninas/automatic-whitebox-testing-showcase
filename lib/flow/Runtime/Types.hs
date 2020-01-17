@@ -29,21 +29,18 @@ import           GHC.Exts           (Any)
 import           Playback.Types
 
 data OperationalData = OperationalData
-    { options :: !(MVar (Map String String))
+    { options :: MVar (Map String String)
     }
 
 data MockedData = MockedData
-    { runIOMocks   :: !(MVar [Value])
-    , connectMocks :: !(MVar [Value])
-    , runDBMocks   :: !(MVar [Value])
-    -- { runIOMocks   :: !(MVar [Any])
-    -- , connectMocks :: !(MVar [Any])
-    -- , runDBMocks   :: !(MVar [Any])
+    { runIOMocks   :: MVar [Value]
+    , connectMocks :: MVar [Value]
+    , runDBMocks   :: MVar [Value]
     }
 
 data Runtime = Runtime
-  { runMode     :: !RunMode
-  , runtimeData :: !(Either OperationalData MockedData)
+  { runMode     :: RunMode
+  , runtimeData :: Either OperationalData MockedData
   }
 
 data RunMode

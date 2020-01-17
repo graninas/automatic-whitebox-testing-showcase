@@ -97,7 +97,7 @@ main = hspec $ do
 
       mockedData <- MockedData
         <$> mkMocks @Int []
-        <*> mkMocks [MockedConnection "1"]
+        <*> mkMocks [ MockedConnection "1" ]
         <*> mkMocks [ [expelled1, expelled2, student1, student2, student3]
                     , [expelled1, expelled2] ]
 

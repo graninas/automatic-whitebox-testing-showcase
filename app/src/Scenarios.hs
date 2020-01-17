@@ -130,4 +130,5 @@ getStudentsCount dbName cfg = do
   (disabled :: [Student]) <- query conn "SELECT * FROM students WHERE disabled=1"
   let count = length students - length disabled
   when (count == 0) $ logInfo "No records found."
+  when (count /= 0) $ logInfo $ "Number of students: " ++ show count
   pure count
