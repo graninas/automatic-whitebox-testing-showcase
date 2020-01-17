@@ -7,11 +7,12 @@ import Control.Concurrent.MVar
 import Control.Monad (when, unless)
 import qualified Data.Map.Strict as Map
 import qualified Data.Vector as V
+import qualified Data.Text as T
 import qualified Data.ByteString.Lazy as BL
-import Data.Aeson (decode, encode)
+import           Data.Aeson            (decode, encode, toJSON)
+import           Data.UUID             (toString)
+import           Data.UUID.V4          (nextRandom)
 import Test.Hspec
-import Data.UUID             (toString)
-import Data.UUID.V4          (nextRandom)
 
 import Playback.Types
 import Runtime.Types
@@ -131,7 +132,6 @@ main = hspec $ do
       rt <- initRecorderRT $ Just mockedData
       runFlow rt $ getStudentsCountFlow "test_db" dbConfig
       entries <- getRecording rt
-
       pRt <- initPlayerRT entries
       runFlow pRt $ getStudentsCountFlow "test_db" dbConfig
       errors <- getErrors pRt

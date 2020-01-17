@@ -134,8 +134,6 @@ getNextMock p mvar method = do
       error $ "Mocks are exausted for " ++ method
     (m:ms) -> do
       putMVar mvar ms
-      print $ typeOf p
-      print m
       case decode m of
         Just r -> pure r
         Nothing -> error $ "Failed to decode mock for " ++ method
