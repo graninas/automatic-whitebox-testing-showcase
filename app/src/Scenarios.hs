@@ -103,6 +103,17 @@ getStudentsCountFlow dbName cfg = do
   when (count /= 0) $ L.logInfo $ "Count: " ++ show count
   pure count
 
+getStudentsCountFlowBroken :: String -> DBConfig -> Flow Int
+getStudentsCountFlowBroken dbName cfg = do
+  conn     <- L.connect dbName cfg
+  students <- L.query @Students conn queryAll
+  expelled <- L.query @Students conn queryExpelled
+
+  let count = length students + length expelled
+  when (count == 0) $ L.logInfo "No records found."
+  when (count /= 0) $ L.logInfo $ "Count: " ++ show count
+  pure count
+
 
 
 compareGUIDs :: String -> Flow ()

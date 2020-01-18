@@ -21,23 +21,35 @@ import           Expression.Expr
 import           Scenarios
 import           Playback
 
-getStudentFlowAndMocks :: IO (L.Flow Int, R.MockedData)
-getStudentFlowAndMocks = do
+getStudentFlowAndMocks :: String -> IO (L.Flow Int, R.MockedData)
+getStudentFlowAndMocks "students" = do
   mocks <- R.MockedData
     <$> R.mkMocks @Int []
     <*> R.mkMocks [ R.MockedConnection "test_db" ]
     <*> R.mkMocks [ [expelled1, expelled2, student1, student2, student3]
                   , [expelled1, expelled2] ]
   pure (getStudentsCountFlow "test_db" dbConfig, mocks)
+getStudentFlowAndMocks "students_broken" = do
+  mocks <- R.MockedData
+    <$> R.mkMocks @Int []
+    <*> R.mkMocks [ R.MockedConnection "test_db" ]
+    <*> R.mkMocks [ [expelled1, expelled2, student1, student2, student3]
+                  , [expelled1, expelled2] ]
+  pure (getStudentsCountFlowBroken "test_db" dbConfig, mocks)
+getStudentFlowAndMocks scenario = error $ "Scenario is not supported: " ++ scenario
 
 main :: IO ()
 main = do
   args <- getArgs
-  (flow, mocks) <- getStudentFlowAndMocks
+
+  (flow, mocks) <- case args of
+    (_:_:scenario:[]) -> getStudentFlowAndMocks scenario
+    _ -> getStudentFlowAndMocks "students"
+
   case args of
     [] -> putStrLn "Please specify arguments."
-    ("recorder" : fName : []) -> recorder (Just mocks) fName flow
-    ("player"   : fName : []) -> player fName flow
+    ("recorder" : fName : _) -> recorder (Just mocks) fName flow
+    ("player"   : fName : _) -> player fName flow
     _ -> error "Args not recognized"
 
 
