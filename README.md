@@ -459,7 +459,7 @@ getStudentsCount dbName cfg = do
   pure count
 ```
 
-Here, the conn value is used twice, and there is no any limitations to pass it across the scenarios. It's type is an abstraction over the native one:
+Here, the conn value is used twice, and there is no any limitations to pass it across the scenarios. Its type is an abstraction over the native one:
 
 ```haskell
 data Connection
